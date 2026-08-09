@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check:cycles": "madge --circular --extensions ts,tsx src/",
+    "check:cycles": "madge --circular --extensions ts,tsx --ts-config tsconfig.json src/",
     "verify": "npm run typecheck && npm run test && npm run build"
   },
   "dependencies": {
