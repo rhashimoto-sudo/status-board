@@ -10,13 +10,13 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] docs/ 整備（要件定義・雛形設置）
-  - 状態: main / docs/01_requirements.md・CLAUDE.md・TODO.md 作成済み。architect 起動待ち
+- [ ] Wave 1 / Issue #1 プロジェクト初期化
+  - 状態: worktree `../wt-status-board-issue-1`（ブランチ `develop/step1-dashboard-issue-1`）作成済み。dev-phase1-worker 実行中
 
-## ブロック中（ユーザー判断待ち）
+## ブロック中（push 直前まで着手不要）
 - [ ] GitHubリポジトリ名のハイフン除去（`gh repo rename status-board -R rhashimoto-sudo/-status-board`）
-  - 状態: Bash権限classifierにブロックされた。ユーザー実行または権限許可が必要
-- [ ] 同一リポジトリで別エージェント（status-board-coordinator）が並行作業中。担当の切り分け待ち
+  - 状態: team-lead がユーザーへ実行依頼済み。**Step 1 のローカル実装には不要**。push 直前に必要になる
+  - coordinator はリネームもリモートURL変更も**行わない**
 
 ## 未着手
 
