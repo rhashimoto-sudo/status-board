@@ -16,8 +16,15 @@ export function calcExp(input: ExpInput): number {
   if (!input.hasEvidence) return 0;
   const base = DIFFICULTY_BASE_EXP[input.difficulty];
   const novelty = NOVELTY_MULTIPLIERS[input.novelty];
-  const raw = base * novelty * input.completion * input.structureMultiplier * input.debuffMultiplier;
+  const completion = clampCompletion(input.completion);
+  const raw = base * novelty * completion * input.structureMultiplier * input.debuffMultiplier;
   return Math.round(raw);
+}
+
+/** `completion` は 0..1 の想定。範囲外の入力でEXPが増幅・負転しないよう入口でクランプする。 */
+function clampCompletion(completion: number): number {
+  if (Number.isNaN(completion)) return 0;
+  return Math.min(1, Math.max(0, completion));
 }
 
 /** 04_exp_rules.md §2: 主ステータスに100%、副ステータス（あれば）に50%換算（四捨五入）で加算する。 */
