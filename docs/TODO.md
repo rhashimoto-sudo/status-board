@@ -10,22 +10,16 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] Wave 1 / Issue #1 プロジェクト初期化
-  - 状態: worktree `../wt-status-board-issue-1`（ブランチ `develop/step1-dashboard-issue-1`）作成済み。dev-phase1-worker 実行中
+- [ ] Wave 4 / Issue #8（exp.ts）・#9（skill.ts）・#10（data-source.ts）
+  - 状態: `develop/step1-dashboard`。Wave 1〜3（Issue #1〜#7）合体済み・`npm run verify` 通過（Tests 35 passed）
+  - 実行方式: **逐次**（並列実行のユーザー承認が未取得のためルールどおり逐次にフォールバック）
+  - 各Issueは専用worktree `../wt-status-board-issue-N` / ブランチ `develop/step1-dashboard-issue-N` で隔離実行
+  - 合体済みworktreeは Waveバリア完了まで保持中（レビュー指摘の修正に使うため）
 
-## ブロック中（push 直前まで着手不要）
+## Step 2（デプロイ前にだけ必要・今は着手しない）
 - [ ] GitHubリポジトリ名のハイフン除去（`gh repo rename status-board -R rhashimoto-sudo/-status-board`）
-  - 状態: team-lead がユーザーへ実行依頼済み。**Step 1 のローカル実装には不要**。push 直前に必要になる
-  - coordinator はリネームもリモートURL変更も**行わない**
-
-## 未着手
-
-### セットアップ
-- [ ] 技術スタックのセットアップ（Next.js 15 App Router + TypeScript + Tailwind CSS v4 + Recharts）
-- [ ] 基本ディレクトリ構造の作成（src/app, src/components/{status,mission,growth}, src/lib, src/data）
-- [ ] staging ブランチのブートストラップ（初回コミット後）
-
-### 開発
+  - team-lead がユーザーへ実行を依頼済み。**Step 1 のローカル実装には不要**
+  - coordinator はリネームもリモートURL変更も**行わない**。push 直前に team-lead が取り次ぐ
 
 ## Step 1 Issue分解（Wave別）
 
