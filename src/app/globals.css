@@ -3,3 +3,79 @@
 :root {
   color-scheme: dark;
 }
+
+@theme {
+  /* ── アクセント（シアン × バイオレットの2色のみ） ── */
+  --color-accent-cyan: #22d3ee;
+  --color-accent-violet: #8b5cf6;
+
+  /* ── 背景・サーフェス ── */
+  --color-bg: #0a0b12;
+  --color-surface: #11131d;
+  --color-surface-raised: #171a26;
+
+  /* ── 罫線 ── */
+  --color-border-hairline: rgba(255, 255, 255, 0.08);
+  --color-border-bracket: rgba(34, 211, 238, 0.35);
+
+  /* ── テキスト ── */
+  --color-text-primary: #e6e9f2;
+  --color-text-secondary: #9aa3b8;
+  --color-text-muted: #6b7490;
+
+  /* ── HP・状態色 ── */
+  --color-hp-safe: #22c55e;
+  --color-hp-warn: #f59e0b;
+  --color-hp-danger: #ef4444;
+  --color-debuff: #8b5cf6;
+  --color-ghost: rgba(139, 92, 246, 0.25);
+
+  /* ── タイポグラフィ ── */
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+
+  /* ── スペーシングスケール ── */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-text-primary);
+}
+
+/* ── フォーカスリング（NFR-4）: outline: none の単独指定は禁止し、必ずこのユーティリティを使う ── */
+.focus-ring {
+  outline: none;
+}
+.focus-ring:focus-visible {
+  outline: 2px solid var(--color-accent-cyan);
+  outline-offset: 2px;
+}
+
+/* ── 発光（グロー）: カウントダウン残り3日未満 と HP危険域の2箇所専用のパルス ── */
+@keyframes danger-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55);
+  }
+  50% {
+    box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.55);
+  }
+}
+
+.danger-glow {
+  box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.55);
+  animation: danger-pulse 1.6s ease-in-out infinite;
+}
+
+/* prefers-reduced-motion: パルスを止め、静的な赤の発光にする */
+@media (prefers-reduced-motion: reduce) {
+  .danger-glow {
+    animation: none;
+    box-shadow: 0 0 12px 4px rgba(239, 68, 68, 0.55);
+  }
+}
