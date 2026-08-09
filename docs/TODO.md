@@ -10,11 +10,47 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] Wave 4 / Issue #8（exp.ts）・#9（skill.ts）・#10（data-source.ts）
-  - 状態: `develop/step1-dashboard`。Wave 1〜3（Issue #1〜#7）合体済み・`npm run verify` 通過（Tests 35 passed）
-  - 実行方式: **逐次**（並列実行のユーザー承認が未取得のためルールどおり逐次にフォールバック）
-  - 各Issueは専用worktree `../wt-status-board-issue-N` / ブランチ `develop/step1-dashboard-issue-N` で隔離実行
-  - 合体済みworktreeは Waveバリア完了まで保持中（レビュー指摘の修正に使うため）
+- [ ] Wave 5 / Issue #11（penalty.ts）
+  - 状態: 未着手。`develop/step1-dashboard` に Wave 1〜4（Issue #1〜#10）合体済み・
+    `npm run verify` 通過（Tests 107 passed）・`npm run check:cycles` 循環0件
+  - 次の一手: `rules/parallel-worktree.md` の**herdr 正規手順**（`herdr worktree create` →
+    `herdr agent start <issue-id> --cwd <worktree> --split down -- claude --agent dev-phase1-worker`）
+    で起動する。Wave 4 までは生の `git worktree` + Agentツールで実行しており手順から外れていた
+  - Wave 5 は Issue #11 の1件のみ＝同時実行の余地なし（逐次）
+  - Wave 1〜10 の worktree は Wave 4 バリア完了時に全て `git worktree remove` 済み
+
+## Step 1 スコープ外として確定した残作業（着手しない・記録のみ）
+
+> Wave 4 バリアの `/code-review` と Codex セカンドレビューで検出し、
+> **ユーザー判断で Step 1 のスコープ外**と確定したもの。Step 1 は
+> `src/data/*.json` の静的ダミー表示のみで EXP 計算を画面から呼ばないため実害はない。
+
+- [ ] 🔥LEARNING / ⚔️EXECUTION の自動導出が実装されていない
+  - `01_requirements.md` FR-1-1・`03_status_system.md` L41・`04_exp_rules.md` §3 は
+    「専門7つの副産物として自動導出」「手入力を許すと歪みメーターの検知が壊れる」と定めているが、
+    `02_architecture.md` §4.5 に導出関数の宣言が無く、どの Issue にも含まれていない
+  - 現状 `distributeExp` は主（+副）にしか加算しないため、この2軸は永久に0のまま
+  - 担当: **Step 3（GMエージェント）**。着手前に architect で `02_architecture.md` §4.5 に
+    導出関数を追記してから Issue 化する
+
+- [ ] 派生スキルの「該当ステータス EXP +10%」に到達可能な処理経路が無い
+  - `constants.ts:21` の `DERIVATION_EXP_BONUS = 0.10` はリポジトリ内で定義行以外から
+    一度も参照されていない（`grep` で確認済み）
+  - `derivationStates()` は解放状態を算出するが `UniqueSkill` に格納して表示するだけで、
+    `calcExp`/`distributeExp` は解放状態も定数も受け取らない
+  - **TECH は《AI開発》と《システム設計》の2派生がどちらも `effect: "TECH"`** のため、
+    重複時に +10% を1回だけ適用するのか加算/乗算するのかの契約が未定義。
+    Step 3 で実装する前にこの契約を `07_unique_skill.md` に明記する必要がある
+  - 担当: **Step 3（GMエージェント）**
+
+- [ ] `data-source.ts` の `as` キャストが JSON の契約を型で保証していない
+  - JSON の widen された型がキャスト先の supertype になるため typecheck を素通りする。
+    `src/test/data-source.test.ts` で9キー充足・HPレンジ・deadline の解釈可能性等は
+    固めたが、クエスト内部の `main`/`sub`/`involvedStatuses`/`expectedExp`・
+    ミッションの `deadline`・デバフ・履歴の数値までは検証していない
+  - 完全な担保にはスキーマ検証ライブラリ（zod 等）の導入判断が必要で、
+    `01_requirements.md` の技術スタックに無いため Step 1 では入れない
+  - 担当: 未定（Step 2 以降でスキーマ検証を入れるか判断する）
 
 ## Step 2（デプロイ前にだけ必要・今は着手しない）
 - [ ] GitHubリポジトリ名のハイフン除去（`gh repo rename status-board -R rhashimoto-sudo/-status-board`）
@@ -27,6 +63,12 @@
 > Issue数: 24 / Wave数: 9（レビュー区切り9回）/ 最長依存鎖: 9
 > （W1-1 → W2-1 → W3-2 → W4-1 → W5-1 → W6-1 → W7-1 → W8-1 → W9-1）
 > 担当エージェント: 全Issue共通で `dev-phase1-worker`
+>
+> **Issue #1〜#7（Wave 1〜3）は実装・合体とも完了済みだが、`docs/WORK_LOG/` に記録が無いため
+> ここから削除していない**（`logger` は WORK_LOG に記録できなかったタスクを TODO から
+> 削除してはならない）。当時のセッションで `/logger` が実行されなかったとみられる。
+> 記録を後から捏造しないため、削除するかどうかはユーザー判断を待つ。
+> Wave 4（#8〜#10）は `docs/WORK_LOG/2026-08-10.md` に記録済みのため削除した。
 
 ### Wave 1
 
@@ -132,49 +174,6 @@
 **提供**: 上記5ファイルのデータ形状（`data-source.ts` が読み込む契約）
 **依存契約**: Issue#2 の `types.ts`（Status/Quest/Snapshot/HallOfFame の形状）
 **Wave**: 3
-**担当エージェント**: dev-phase1-worker
-
-### Wave 4（依存: Wave3）
-
-#### Issue #8: exp.ts — EXP計算・配分・フロア
-**目的**: EXP計算式・主副配分・減点時フロア処理を実装する（画面からは呼ばない。単体検証のみ）
-**受け入れ条件**:
-- [ ] `floorExp`: Lv5(940)−50→926（Lv5のまま）/ Lv5(1000)−10→990 / Lv1(5)−10→0（負にならない。AC-5）
-- [ ] `calcExp`: 60×1.5×1.0×1.30×1.0=117 / 25×0.5×0.7×1.0×0.8=7 / `hasEvidence:false`→0
-- [ ] `distributeExp`: 副ステータスが主の50%換算（四捨五入）で加算される
-- [ ] `applyExpDelta` は内部で必ず `floorExp` を通す（C-7）
-- [ ] `npm test`（`src/test/exp.test.ts`）が上記を検証し通る
-**対象ファイル**: `src/lib/exp.ts`, `src/test/exp.test.ts`
-**提供**: `ExpInput`型, `calcExp`, `distributeExp`, `floorExp`, `applyExpDelta`
-**依存契約**: Issue#6 の `level.ts`（`levelFloorExp` 相当のLv下限値）/ Issue#2 の `constants.ts`（DIFFICULTY_BASE_EXP等）
-**Wave**: 4
-**担当エージェント**: dev-phase1-worker
-
-#### Issue #9: skill.ts — 《構造化》と派生
-**目的**: 発動回数からのSkill Lv導出、構造化ボーナス、派生5種の解放判定を実装する
-**受け入れ条件**:
-- [ ] `skillLevelFromActivations`: 0→1/9→1/10→2/24→2/25→3/49→3/50→4/99→4/100→5/500→10/9999→10（AC-8）
-- [ ] `structureBonus`: 関与2→1.0 / 関与3→該当Skill Lvの倍率
-- [ ] `derivationStates`: TECH7・INT4 →《システム設計》未解放、TECH7・INT5 →解放（AND条件。AC-9）
-- [ ] `isFinalClassReached`: TOTAL Lv9でも派生5種未解放なら `false`
-- [ ] `npm test`（`src/test/skill.test.ts`）が上記を検証し通る
-**対象ファイル**: `src/lib/skill.ts`, `src/test/skill.test.ts`
-**提供**: `skillLevelFromActivations`, `skillMultiplier`, `activationsToNext`, `skillProgress`, `shouldActivate`, `structureBonus`, `derivationStates`, `allDerivationsUnlocked`, `isFinalClassReached`, `buildUniqueSkill`
-**依存契約**: Issue#6 の `level.ts`（型のみ、循環回避のため `isFinalClassReached` はここに配置。Q-3）/ Issue#2 の `constants.ts`（SKILL_*, DERIVATIONS）
-**Wave**: 4
-**担当エージェント**: dev-phase1-worker
-
-#### Issue #10: data-source.ts — JSON読込とphase分岐
-**目的**: 静的JSONを唯一の入口で読み込み型を付けて返す。`phase` によるstatus/status.calib分岐をこの1箇所に閉じる
-**受け入れ条件**:
-- [ ] ファイル先頭に `import "server-only";` があり、クライアントからimportするとビルド失敗する
-- [ ] `loadDashboard("main")` は `status.json` を、`loadDashboard("calibration")` は `status.calib.json` を読む。分岐はこの1行のみ
-- [ ] `src/data/*.json` を import するのは `data-source.ts` だけである（C-1。他ファイルをgrepして確認）
-- [ ] 戻り値が `DashboardData` 型と完全一致し `npm run typecheck` が通る
-**対象ファイル**: `src/lib/data-source.ts`
-**提供**: `loadDashboard(phase: Phase): DashboardData`
-**依存契約**: Issue#7 のダミーJSON5本 / Issue#2 の `types.ts`（DashboardData等）
-**Wave**: 4
 **担当エージェント**: dev-phase1-worker
 
 ### Wave 5（依存: Wave4）
