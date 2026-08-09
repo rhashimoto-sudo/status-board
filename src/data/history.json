@@ -1,0 +1,1442 @@
+[
+  {
+    "date": "2026-05-13",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-05-14",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-05-15",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-05-16",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-05-17",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-05-18",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-05-19",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-05-20",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-05-21",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-05-22",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-05-23",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-05-24",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-05-25",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-05-26",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-05-27",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 1,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-05-28",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-05-29",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-05-30",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-05-31",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-01",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-06-02",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-06-03",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-04",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-05",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 3,
+      "EXECUTION": 2
+    },
+    "totalLevel": 2.9,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-06-06",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 17
+  },
+  {
+    "date": "2026-06-07",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-06-08",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 22
+  },
+  {
+    "date": "2026-06-09",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-06-10",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-11",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-12",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-06-13",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-14",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 22
+  },
+  {
+    "date": "2026-06-15",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 17
+  },
+  {
+    "date": "2026-06-16",
+    "levels": {
+      "INT": 4,
+      "TECH": 3,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.1,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-17",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-18",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-06-19",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-20",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-21",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-06-22",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-23",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-24",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-06-25",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-06-26",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-27",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-06-28",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-06-29",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-06-30",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 2
+    },
+    "totalLevel": 3.3,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-07-01",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.4,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-02",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.4,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-07-03",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.4,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-04",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.4,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-07-05",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 2,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.4,
+    "gainedExp": 0
+  },
+  {
+    "date": "2026-07-06",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.5,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-07",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.5,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-08",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.5,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-09",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 1,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.5,
+    "gainedExp": 17
+  },
+  {
+    "date": "2026-07-10",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 2,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.5,
+    "gainedExp": 22
+  },
+  {
+    "date": "2026-07-11",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-12",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-13",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-14",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-15",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-16",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 22
+  },
+  {
+    "date": "2026-07-17",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-07-18",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 17
+  },
+  {
+    "date": "2026-07-19",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-20",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-21",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-22",
+    "levels": {
+      "INT": 4,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.6,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-07-23",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-07-24",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-25",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-26",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-27",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-28",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 18
+  },
+  {
+    "date": "2026-07-29",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-07-30",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-07-31",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-08-01",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-08-02",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-08-03",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 17
+  },
+  {
+    "date": "2026-08-04",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 4,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.7,
+    "gainedExp": 21
+  },
+  {
+    "date": "2026-08-05",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-08-06",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-08-07",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-08-08",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 19
+  },
+  {
+    "date": "2026-08-09",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 20
+  },
+  {
+    "date": "2026-08-10",
+    "levels": {
+      "INT": 5,
+      "TECH": 4,
+      "DATA": 5,
+      "MARKETING": 3,
+      "PM": 3,
+      "BRIDGE": 2,
+      "ENGLISH": 2,
+      "LEARNING": 4,
+      "EXECUTION": 3
+    },
+    "totalLevel": 3.9,
+    "gainedExp": 19
+  }
+]

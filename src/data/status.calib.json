@@ -1,0 +1,20 @@
+{
+  "phase": "calibration",
+  "generation": 1,
+  "hp": 100,
+  "streak": 0,
+  "statuses": {
+    "INT": { "key": "INT", "exp": 280, "measured": true, "expThreeMonthsAgo": 0 },
+    "TECH": { "key": "TECH", "exp": 600, "measured": true, "expThreeMonthsAgo": 0 },
+    "DATA": { "key": "DATA", "exp": 150, "measured": true, "expThreeMonthsAgo": 0 },
+    "MARKETING": { "key": "MARKETING", "exp": 1000, "measured": true, "expThreeMonthsAgo": 0 },
+    "PM": { "key": "PM", "exp": 0, "measured": false, "expThreeMonthsAgo": 0 },
+    "BRIDGE": { "key": "BRIDGE", "exp": 0, "measured": false, "expThreeMonthsAgo": 0 },
+    "ENGLISH": { "key": "ENGLISH", "exp": 0, "measured": false, "expThreeMonthsAgo": 0 },
+    "LEARNING": { "key": "LEARNING", "exp": 0, "measured": false, "expThreeMonthsAgo": 0 },
+    "EXECUTION": { "key": "EXECUTION", "exp": 0, "measured": false, "expThreeMonthsAgo": 0 }
+  },
+  "debuffs": [],
+  "uniqueSkillActivations": 0,
+  "calibration": { "day": 6, "totalDays": 14, "done": 8, "totalQuests": 18 }
+}
