@@ -37,6 +37,8 @@ export function StatusTab({ data }: StatusTabProps) {
   }));
 
   const skill = buildUniqueSkill(state.uniqueSkillActivations, state.statuses);
+  const balanceMeasured =
+    state.statuses.LEARNING.measured && state.statuses.EXECUTION.measured;
 
   return (
     <div className="flex flex-col gap-4">
@@ -63,7 +65,15 @@ export function StatusTab({ data }: StatusTabProps) {
 
       <StatusList items={state.statuses} />
 
-      <BalanceMeter learningLv={levels.LEARNING} executionLv={levels.EXECUTION} />
+      {/*
+        歪みメーターは LEARNING / EXECUTION が両方とも測定済みのときだけ出す。
+        未測定の軸は StatusList・レーダーとも "???" 表示になるため、ここだけ Lv1 扱いで
+        「バランスが取れています」と診断すると同一画面内で矛盾した情報になる（03_status_system.md の
+        未測定の扱いに従う）。測定が済み次第そのまま表示される。
+      */}
+      {balanceMeasured ? (
+        <BalanceMeter learningLv={levels.LEARNING} executionLv={levels.EXECUTION} />
+      ) : null}
     </div>
   );
 }
