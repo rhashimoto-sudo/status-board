@@ -84,9 +84,12 @@ work-dashboard の Notion に PJ 行として**既に存在する**（`3bd93e5f-
 
 work-dashboard に置けない概念だけを持つ。**仕事のタスクはここに入れない。**
 
+> **状態: 作成済み**（2026-08-15）。DB「status-board Quests」に以下11プロパティを
+> Notion API で作成し、`MainStatus` に土台2軸が含まれないことを検証済み。
+
 | プロパティ | 型 | 誰が書くか | 備考 |
 |---|---|---|---|
-| `Name` | Title | 本人 / GM | |
+| `名前` | Title | 本人 / GM | Notion 既定のタイトル。**日本語名のまま**（リネームしない） |
 | `Tier` | Select（`daily` / `boss` / `calibration`） | 自動 | |
 | `Status` | Select（`todo` / `done` / `failed`） | **本人** | デイリーはここだけ触る |
 | `WeekOf` | Date | 自動 | 週次ロックの単位（月曜） |
@@ -94,12 +97,13 @@ work-dashboard に置けない概念だけを持つ。**仕事のタスクはこ
 | `MainStatus` | Select（**専門7軸のみ**） | GM | |
 | `Difficulty` | Select（D1〜D5） | GM | **ボス・測定期間のみ**。デイリーは持たない |
 | `Novelty` | Select（first / repeat / mastered） | GM | 同上 |
-| `Completion` | Number（0.0〜1.0） | GM | 同上 |
+| `Completion` | Number（0.0〜1.0・**%表示**） | GM | 同上。スマホで判断が速いよう percent 書式にした |
 | `ForWhom` | Text | 本人（任意） | **EXP 計算に入れない。表示のみ**（`00_profile.md` §6.5） |
 | `WorkTaskId` | Text | GM | work-dashboard の page_id。ボス・測定期間の証拠 |
 
 > **ルール**: `MainStatus` の選択肢に **LEARNING / EXECUTION を含めない**
-> （`03_status_system.md` §1.1。Notion 側の選択肢定義でも防ぐ）。
+> （`03_status_system.md` §1.1）。UI で禁止するだけでなく **Notion の選択肢定義の側でも塞ぐ**。
+> データの入口で構造的に不可能にしておかないと、Notion から直接編集された時に破れる。
 
 ### 3.1 デイリーは査定を通さない
 
