@@ -10,29 +10,29 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] Wave 6 ロットC 着手待ち（ロットA・ロットB は完了。**ロットC に進む指示待ち**）
-  - 状態: Wave 6 ロットA（#12〜#14）+ ロットB（#15〜#17）+ 各種指摘修正 +
-    375px 横あふれの**真因修正**（#overflow375b）まで合体済み（`1362364`）。
-    `npm run verify` 通過 / Tests **153 passed / 7ファイル** / `check:cycles` 循環0件
-  - **375px 実測（AC-13）は司令塔がタブごとに分離してブラウザで実施済み**。
-    Tab1・Tab2 とも、コンテナが `flex` でも **`grid`** でも `scrollWidth` **375**・
-    はみ出し要素 **0件**（全 DOM 走査）。Tab2 の grid は修正前 **391** だったので再現→解消を確認
-  - team-lead が実測済み: TZ=UTC でも「月曜日」表示（本番バグ解消）、カウントダウンの毎秒動作、
-    総合称号「実践者」、紋章 48px で9軸の頂点が視認可能、ゴースト破線も視認可能、
-    ステータス一覧9行のバーとテキストが整合
-  - 次の一手: **ロットC（#18 growth-chart + activity-heatmap / #19 gm-learning-panel + hall-of-fame）**の
-    着手指示を待つ。2 Issue は相互に独立・ファイル重複なしなので並列実行できる
-  - **Wave 7 への申し送り**: `mission-tab.tsx` / `status-tab.tsx` / `growth-tab.tsx` と
-    `dashboard.tsx` のコンテナに **grid を使う場合は必ず `minmax(0,1fr)`** にすること。
-    素の `1fr` や暗黙トラックだと grid アイテムの `min-width:auto` により
-    パネルが min-content 未満に縮めず横あふれが再発する（#overflow375b で実測）
-  - **教訓（レイアウト検証）**:
-    1. AC-13 のような CSS の受け入れ条件は `npm run verify` を**完全に素通りする**
-    2. 「ブラウザで実測した」だけでは不十分。**問題が再現する条件**で測ること。
-       修正前のコードで再現させてから、同じ条件で解消を確認する
-    3. 確認ページは**タブごとに分離**する（混ぜると製品では起こらない現象を追うことになる）
-    4. `min-width: 0` は「縮むことを許可する」だけで **min-content 寄与を 0 にはしない**。
-       確実に潰すには grid の `minmax(0,1fr)` でトラック最小幅を 0 にする
+- [ ] **Wave 6 完了。Wave 7（Issue #20〜#22）の着手指示待ち**
+  - 状態: Wave 6 の全8 Issue（#12〜#19）+ 各種指摘修正まで合体済み（`ee0b763`）。
+    `npm run verify` 通過 / Tests **153 passed / 7ファイル** / `check:cycles` 循環0件（madge 46ファイル）
+  - **375px 実測（AC-13）は司令塔がタブごとに分離してブラウザで実施済み。**
+    Tab1 / Tab2 / Tab3 とも、コンテナが `flex` でも **`grid`** でも `scrollWidth` **375**・
+    はみ出し要素 **0件**（全 DOM 走査）
+  - Tab3 は凡例を**実際にクリック**して 3 → 4 → **10系列**の切替を確認。
+    最大10系列でも 375px で溢れない（凡例は `flex-wrap` で3行に折り返す）。
+    ヒートマップは `viewBox` + `width:100%` で親幅に追従（320→288 / 375→343 / 768→736）
+  - 次の一手: **Wave 7（#20 status-tab / #21 mission-tab / #22 growth-tab）**の着手指示を待つ。
+    3 Issue は相互に独立・ファイル重複なしなので並列実行できる
+- [ ] **Wave 7 への申し送り（着手時に必ず worker へ伝えること）**
+  1. **タブのコンテナに grid を使う場合は必ず `minmax(0,1fr)`。** 素の `1fr` や暗黙トラックだと
+     grid アイテムの `min-width:auto` によりパネルが min-content 未満に縮めず横あふれが再発する
+     （#overflow375b で実測。`docs/WORK_LOG/2026-08-15-overflow375b.md`）
+  2. **`ActivityHeatmap` の `intensity` は呼び出し側が算出する契約。**
+     `HEATMAP_INTENSITY_STEPS`（5段階）へのマッピングを **Issue #22（`growth-tab.tsx`）で実装する**
+  3. ロットA・ロットBで API が変わっている。`HeroHeader` は
+     `totalLevel: number | null` / `totalTitle: string | null`、`UniqueSkillPanel` は
+     `totalLevel: number | null` を追加で受け取り、`StatusRadar` は `centerSlot?: ReactNode`
+     （ここに `SkillEmblem` を渡す）
+  4. 日付を扱う場合は `src/lib/datetime.ts`（`Asia/Tokyo` 固定）を使い、
+     `new Date(iso).getDay()` 等のランタイム TZ 依存 API を使わない
 - [x] **タブ構成は現行仕様のまま維持（ユーザー確定・変更しない）**
   - 情報アーキテクチャのレビューで出た3案（デイリー/ボスへの HP 遷移 `♥ 62 → 52` の併記 /
     Tab3 の GM学習状況・殿堂を折りたたみに降格 / 敗北ログを Tab2 → Tab3 へ移動）は
@@ -142,32 +142,6 @@
 > Wave 6 ロットA（#12〜#14）は `docs/WORK_LOG/2026-08-15.md` /
 > `docs/WORK_LOG/2026-08-15-wave6a.md` に記録済みのため削除した。
 > **残 Issue: #15〜#24。**
-
-### Wave 6（依存: Wave5, Wave3, Wave2）— 各タブの葉パネル（相互に独立・ファイル重複なし）
-
-#### Issue #18: growth-chart.tsx + activity-heatmap.tsx
-**目的**: 既定3系列+専門7系列トグルの折れ線グラフと、自前SVGの活動ヒートマップを実装する
-**受け入れ条件**:
-- [ ] `"use client"`、既定表示はTOTAL/LEARNING/EXECUTIONの3本、凡例クリックで専門7つを個別表示できる
-- [ ] 専門7系列に赤・緑・黄を割り当てない（11 §3.1）
-- [ ] `activity-heatmap.tsx` は `viewBox`+`width:100%` で親幅に追従する自前SVG（ライブラリ不使用。C-20）
-- [ ] `ResponsiveContainer`使用でチャートが固定px幅を持たない（AC-13）
-**対象ファイル**: `src/components/growth/growth-chart.tsx`, `src/components/growth/activity-heatmap.tsx`
-**提供**: `GrowthChart({history: readonly Snapshot[]})`, `ActivityHeatmap({days: {date,gainedExp,intensity}[]})`
-**依存契約**: Issue#2の`types.ts`（Snapshot）/ `constants.ts`（HISTORY_DAYS, HEATMAP_INTENSITY_STEPS）
-**Wave**: 6
-**担当エージェント**: dev-phase1-worker
-
-#### Issue #19: gm-learning-panel.tsx + hall-of-fame.tsx
-**目的**: GM学習状況（ダミー値）パネルと殿堂一覧を描画する
-**受け入れ条件**:
-- [ ] `gm-learning-panel.tsx` はダミー定数を表示し「Step 5 で実データ化」ラベルを付ける
-- [ ] `hall-of-fame.tsx` は0件のとき「記録なし」+ `generation 1 — 生存中` を表示する
-**対象ファイル**: `src/components/growth/gm-learning-panel.tsx`, `src/components/growth/hall-of-fame.tsx`
-**提供**: `GmLearningPanel()`, `HallOfFamePanel({hallOfFame: HallOfFame})`
-**依存契約**: Issue#2の`types.ts`（HallOfFame）
-**Wave**: 6
-**担当エージェント**: dev-phase1-worker
 
 ### Wave 7（依存: Wave6）— 各タブの組み立て
 
