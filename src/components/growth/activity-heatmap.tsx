@@ -1,5 +1,5 @@
 import { weekdayIndexInTimeZone } from "@/lib/datetime";
-import { DISPLAY_TIME_ZONE, HEATMAP_INTENSITY_STEPS } from "@/lib/constants";
+import { HEATMAP_INTENSITY_STEPS } from "@/lib/constants";
 
 const CELL_SIZE = 11;
 const CELL_GAP = 3;
@@ -16,10 +16,11 @@ type HeatmapCell = HeatmapDay | null;
 function buildWeekColumns(days: readonly HeatmapDay[]): readonly HeatmapCell[][] {
   if (days.length === 0) return [];
 
-  // date は "YYYY-MM-DD"（DISPLAY_TIME_ZONE 基準で確定済み）。ランタイムTZ依存の
-  // `new Date(iso).getDay()` は使わず、datetime.ts の `weekdayIndexInTimeZone` を
-  // 明示的に DISPLAY_TIME_ZONE で評価することで Vercel(UTC)/ローカル(JST) の差異を避ける。
-  const leadingPad = weekdayIndexInTimeZone(new Date(`${days[0]!.date}T00:00:00Z`), DISPLAY_TIME_ZONE);
+  // date は "YYYY-MM-DD"（DISPLAY_TIME_ZONE 基準で既に確定済みの日付文字列）。この文字列に
+  // もう解決すべきタイムゾーン情報は無いため、`T00:00:00Z` として組み立てた Date は
+  // 常に "UTC" で再評価する（datetime.ts のドキュメントコメント参照）。DISPLAY_TIME_ZONE
+  // を渡すと、負のオフセットのタイムゾーンでは全セルが1行ずれてグリッドが崩れる。
+  const leadingPad = weekdayIndexInTimeZone(new Date(`${days[0]!.date}T00:00:00Z`), "UTC");
   const cells: HeatmapCell[] = [...Array(leadingPad).fill(null), ...days];
   const trailingPad = (WEEKDAYS_PER_WEEK - (cells.length % WEEKDAYS_PER_WEEK)) % WEEKDAYS_PER_WEEK;
   for (let i = 0; i < trailingPad; i += 1) cells.push(null);
