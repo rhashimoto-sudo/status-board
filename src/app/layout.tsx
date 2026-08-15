@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { NetworkBackground } from "@/components/ui/network-background";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -13,7 +14,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-      <body>{children}</body>
+      <body>
+        {/* 背景のネットワーク。装飾のみで情報を持たない（aria-hidden / pointer-events-none）。 */}
+        <NetworkBackground />
+        {children}
+      </body>
     </html>
   );
 }

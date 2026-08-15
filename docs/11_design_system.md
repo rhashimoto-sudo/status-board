@@ -412,3 +412,39 @@ AC-14（`grep -rn "box-shadow" src/` の出現箇所がカウントダウンと 
 - [ ] `prefers-reduced-motion` でパルスが停止する
 - [ ] ホバーでレイアウトシフトが起きない
 - [ ] `color-scheme: dark` が固定されている
+
+---
+
+## 背景のネットワークアニメーション（2026-08-15 追記）
+
+SF の system window 的な奥行きを出すための装飾。`src/components/ui/network-background.tsx`。
+
+| 項目 | 仕様 |
+|---|---|
+| 描画 | Canvas 2D。`fixed inset-0 -z-10`、`pointer-events-none`、`aria-hidden="true"` |
+| 色 | **シアン（`--color-accent-cyan`）のみ**。新しい色相を増やさない |
+| 表現 | ノード（点）と近接ノード間の結線。距離が近いほど線を濃く描く |
+| 発光 | **使わない。** 影による発光はカウントダウンと HP 危険域に限る規約（AC-14）を維持し、奥行きは不透明度だけで表現する |
+| アニメーション | `requestAnimationFrame`。`setInterval` は使わない（`countdown.tsx` が唯一という契約 C-3 を維持） |
+| `prefers-reduced-motion: reduce` | ループを回さず**静止画を1枚描く**（C-16） |
+| 非表示タブ | `visibilitychange` でループを停止する |
+| 調整値 | すべて `constants.ts` の `NETWORK_BG`（密度・上限数・結線距離・速度・半径・不透明度） |
+| 性能 | デバイスピクセル比は 2 で頭打ち。ノード数は面積比例だが `maxNodes` で上限を設ける |
+
+パネルは不透明な Surface 背景で覆われるため、**背景のネットワークがテキストのコントラストに
+影響しない**（実測でも WCAG AA 違反 0 件を維持）。
+
+### system frame（ステータスウィンドウ枠）
+
+ネットワークの手前に、四隅ブラケット・上下の桟・左右の装飾チップからなる枠を重ね、
+**ゆっくり拡大・収縮させて「呼吸」させる**。ソロレベリングのステータスウィンドウが参照元。
+
+| 項目 | 仕様 |
+|---|---|
+| 呼吸 | `sin` で 1.0 ↔ `breathScale` を往復。等速でなく端で緩むため呼吸に見える |
+| 発光 | **Canvas の `shadowBlur`**。CSS の影プロパティは使わないため AC-14 の検査対象を増やさない |
+| 強度 | 危険を示す赤の発光と競合しないよう、青は控えめな強度に留める |
+| `prefers-reduced-motion` | 呼吸を止め、等倍の枠を1枚だけ描く |
+| 調整値 | `constants.ts` の `SYSTEM_FRAME`（余白比・周期・倍率・不透明度・線幅・発光半径・ブラケット長・チップ数） |
+
+ネットワークと**同一の Canvas・同一の `requestAnimationFrame` ループ**で描く（ループを2本走らせない）。
