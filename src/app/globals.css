@@ -29,6 +29,10 @@
   --color-hp-danger: #ef4444;
   --color-debuff: #8b5cf6;
   --color-ghost: rgba(139, 92, 246, 0.25);
+  /* 線（stroke）専用トークン。--color-ghost（塗り用、0.25）は据え置き、
+     深藍黒の背景・グリッド線（白 0.08）に対して視認できる不透明度まで上げた
+     線専用トークンを分離する（Issue #radar-visibility B）。 */
+  --color-ghost-stroke: rgba(139, 92, 246, 0.6);
 
   /* ── 背景意匠（system window 風。docs/11_design_system.md 追記分） ──
      すべて既存アクセント（シアン/バイオレット）と背景トーンの低不透明度のみで構成し、

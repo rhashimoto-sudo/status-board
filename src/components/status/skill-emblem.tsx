@@ -4,10 +4,14 @@ import { StatValue } from "@/components/ui/stat-value";
 
 const LOCKED_LABEL = "覚醒後に解放";
 const SKILL_NAME = "《構造化》";
-// 背景の紫グロー不透明度の上限。1.0 まで許すと高Lvで背景がほぼ #8b5cf6 単色になり、
-// シアン Lv ラベル（約4.4:1）・《構造化》ラベルの WCAG AA（4.5:1）を割り込む。
-// 0.5 なら --color-surface とのミックス背景に対してどちらも 4.5:1 を上回る（B-2）。
-const MAX_GLOW_OPACITY = 0.5;
+// 未解放時の簡潔な視覚表現（48px に収まる記号のみ。詳細は aria-label に残す）。
+const LOCKED_GLYPH = "?";
+// 背景の紫グロー不透明度の上限。塗りベースを透明（--color-surface 混合ではなく
+// 透明混合）に変えたため、レーダーのシアンポリゴンが下から透けた最悪条件でも
+// Lv ラベル（シアン）が WCAG AA（4.5:1）を割り込まないよう抑える（A-2）。
+// 0.22 なら「紋章の塗り(0.22) の上にレーダーのシアン塗り(fillOpacity 0.22)が
+// 重なった最悪の背景」でも 4.5:1 を上回る（下記コメント参照）。
+const MAX_GLOW_OPACITY = 0.22;
 
 type SkillEmblemProps = {
   /**
@@ -35,32 +39,28 @@ export function SkillEmblem({ skillLevel }: SkillEmblemProps) {
       aria-label={
         locked ? `${SKILL_NAME}: ${LOCKED_LABEL}` : `${SKILL_NAME} Lv ${skillLevel}`
       }
-      className="flex h-16 w-16 flex-col items-center justify-center rounded-full border text-center"
+      className="flex h-12 w-12 flex-col items-center justify-center rounded-full border text-center"
       style={{
         borderColor: locked
           ? "var(--color-border-hairline)"
           : "var(--color-accent-cyan)",
+        // 塗りは透明ベースに変更（下地のレーダーが常に透けるようにする。A-1/A-2）。
+        // --color-surface との不透明混合ではなく transparent との混合にすることで、
+        // 紋章が下地レイヤーに来ても上のポリゴン・グリッドの視認性を妨げない。
         backgroundColor: locked
-          ? "var(--color-surface)"
-          : `color-mix(in srgb, var(--color-accent-violet) ${Math.round(glowOpacity * 100)}%, var(--color-surface))`,
+          ? "transparent"
+          : `color-mix(in srgb, var(--color-accent-violet) ${Math.round(glowOpacity * 100)}%, transparent)`,
       }}
     >
-      <span
-        className="text-[11px] leading-tight"
-        style={{
-          color: locked
-            ? "var(--color-text-muted)"
-            : "var(--color-text-primary)",
-        }}
-      >
-        {SKILL_NAME}
-      </span>
       {locked ? (
-        <span className="text-[9px] leading-tight text-[color:var(--color-text-muted)]">
-          {LOCKED_LABEL}
+        <span
+          aria-hidden
+          className="text-[13px] leading-none text-[color:var(--color-text-muted)]"
+        >
+          {LOCKED_GLYPH}
         </span>
       ) : (
-        <StatValue className="text-[13px] font-semibold text-[color:var(--color-accent-cyan)]">
+        <StatValue className="text-[11px] font-semibold text-[color:var(--color-accent-cyan)]">
           Lv {skillLevel}
         </StatValue>
       )}
