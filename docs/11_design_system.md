@@ -116,6 +116,70 @@
 
 ---
 
+## 6.1 背景意匠（system window 風）
+
+> Wave 9 の受け入れ条件 AC-14（`box-shadow` の出現箇所がカウントダウンと HP 危険域の2つだけ
+> であること）を維持したまま、深い藍黒のパネル面・微細な質感・縁に走るシアンの光を出すための
+> 背景装飾。`src/app/globals.css` の `body` / `body::before` / `body::after` にのみ実装し、
+> コンポーネント側（`src/components/`）には `#` 直書き・`box-shadow` を一切追加しない。
+
+### 追加した CSS 変数（`@theme`）
+
+| 変数名 | 値 | 用途 |
+|---|---|---|
+| `--color-bg-grid-line` | `rgba(34, 211, 238, 0.05)` | 背景の微細グリッド線・スキャンラインの帯色（シアンの極低不透明度） |
+| `--color-bg-vignette` | `rgba(5, 6, 10, 0.6)` | 四隅を沈めるビネットの終端色（背景トーンの濃色） |
+| `--color-bg-edge-cyan` | `rgba(34, 211, 238, 0.18)` | ビューポート上端の縁の光（シアン側） |
+| `--color-bg-edge-violet` | `rgba(139, 92, 246, 0.14)` | ビューポート下端の縁の光（バイオレット側） |
+
+いずれも既存の `--color-accent-cyan` / `--color-accent-violet` と同じ色相を低不透明度で使うのみで、
+新しい色相は追加していない。
+
+### 使用した手法と適用先
+
+| 手法 | 適用先 | 実装 |
+|---|---|---|
+| 微細グリッド | `body` の背景（ページ全体） | `linear-gradient` 2本（縦横）を `48px 48px` タイルで重ねた罫線。パネル面の罫線ベースの構造表現を背景にも延長する意匠 |
+| ビネット | `body` の背景 | `radial-gradient(ellipse at center, transparent 55%, var(--color-bg-vignette) 100%)` で四隅のみをわずかに沈め、中央のパネル群に視線を集める |
+| ノイズ | `body` の背景（最背面レイヤー） | `feTurbulence` の SVG data URI（外部ファイル・CDN不使用）。`feColorMatrix` の alpha を `0.03` に直接焼き込んだ極薄の粒状テクスチャ。CSS変数化はSVG文字列がリテラルであるため不可（ドキュメントに数値を明記） |
+| 縁の光 | `body::before`（fixed, `inset: 0`） | 上端をシアン・下端をバイオレットにフェードする `linear-gradient` の帯のみ。**`box-shadow` は使わない**（下記参照） |
+| スキャンライン | `body::after`（fixed, `inset: 0`） | 高さ200pxの帯を `background-position` アニメーションで縦方向にゆっくり流す（14s linear infinite）。不透明度 `0.25` |
+
+### なぜ `box-shadow` を使わないのか
+
+`CLAUDE.md` と本ドキュメント §6 のルール「発光は『カウントダウン』と『HP危険域』の2箇所のみ」を
+維持するため。Wave 9 の AC-14 は `grep -rn "box-shadow" src/` の出現箇所が
+`@keyframes danger-pulse`（2箇所）・`.danger-glow`（1箇所）・`prefers-reduced-motion` の
+上書き（1箇所）の**計4行のみ**であることを検証する。背景の「縁の光」「近未来感」はすべて
+`background`（`linear-gradient` / `radial-gradient`）と `opacity` のみで表現し、
+`box-shadow` プロパティを新規に一切追加していない（grep で4行のまま変化しないことを確認済み）。
+
+### `prefers-reduced-motion: reduce` での挙動
+
+スキャンライン（`body::after`）のみアニメーションを持つ。`prefers-reduced-motion: reduce` では
+`animation: none` に加えて `opacity: 0` にし、静止した帯すら表示しない（C-16）。
+グリッド・ビネット・ノイズ・縁の光（`body::before`）はいずれも静的で、そもそもアニメーションを
+持たないため対応不要。
+
+### コントラストを担保する前提
+
+- すべての背景装飾は `body` の背景（最背面）にのみ適用し、`z-index: -1` で本文コンテンツの
+  背後に固定する。パネル（`Panel` コンポーネント）は `--color-surface`（`#11131d`）の
+  不透明な背景を持つため、パネル内のテキストの上にはこれらの装飾が一切重ならない
+- 装飾が見える範囲はページ余白（パネル間・パネル外）のみであり、その不透明度は
+  グリッド線・スキャンラインで `0.05`、ノイズで `0.03`、縁の光で `0.18` 以下と、
+  いずれも本文コントラストへ影響しない極低不透明度に抑えている
+- `src/components/status/skill-emblem.tsx` の `MAX_GLOW_OPACITY = 0.5`（直前のコントラスト是正）は
+  未変更。本Issueの背景意匠はコンポーネント側に一切変更を加えていないため、この是正を打ち消さない
+
+### 375px でのレイアウトへの影響
+
+`body::before` / `body::after` はいずれも `position: fixed` かつ `inset: 0` の疑似要素であり、
+ドキュメントの通常フローに参加しない（スクロール幅に加算されない）。`background-attachment: fixed`
+を含め、固定 px 幅の要素を一切追加していないため、375px での横スクロールは発生しない（AC-13 維持）。
+
+---
+
 ## 7. スペーシングスケール
 
 | トークン | 値 | 用途 |
