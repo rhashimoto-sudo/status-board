@@ -10,14 +10,20 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] Wave 5 / Issue #11（penalty.ts）
-  - 状態: 未着手。`develop/step1-dashboard` に Wave 1〜4（Issue #1〜#10）合体済み・
-    `npm run verify` 通過（Tests 107 passed）・`npm run check:cycles` 循環0件
-  - 次の一手: `rules/parallel-worktree.md` の**herdr 正規手順**（`herdr worktree create` →
-    `herdr agent start <issue-id> --cwd <worktree> --split down -- claude --agent dev-phase1-worker`）
-    で起動する。Wave 4 までは生の `git worktree` + Agentツールで実行しており手順から外れていた
-  - Wave 5 は Issue #11 の1件のみ＝同時実行の余地なし（逐次）
-  - Wave 1〜10 の worktree は Wave 4 バリア完了時に全て `git worktree remove` 済み
+- [ ] Wave 5 バリア / Issue #11-fix（`/code-review` 指摘の修正）
+  - 状態: `develop/step1-dashboard-issue-11-fix` で dev-phase1-worker が実行中。
+    Issue #11 本体は `fe669b3` で `develop/step1-dashboard` に合体済み
+    （`npm run verify` 通過 / Tests 129 passed / `npm run check:cycles` 循環0件）
+  - 修正対象3件（ユーザー承認済み）: gameOver の `expThreeMonthsAgo`/`measured` 取りこぼし、
+    `endedAt` の UTC 日付、`updateStreak` の件数不一致とデイリー未達の混同
+  - 次の一手: 合体後、`applyPenalty` の返り値の契約（未クランプ・未フロア）についてユーザー判断を仰ぎ、
+    確定してから Wave 6 に進む
+- [ ] **Wave 6 着手前の未決事項（ユーザー判断待ち・勝手に実装しない）**
+  - `applyPenalty` は `hpDelta` / `expDeltas` を**クランプもフロアもせずに返す**契約になっている。
+    HPクランプ（S-2）と EXPフロア（S-1）は呼び出し側の責務という設計だが、
+    その責務分担が `02_architecture.md` に明記されていない
+  - Wave 6 の `hero-header.tsx` / `hp-bar.tsx` が最初の consumer になるため、
+    Wave 6 着手前に「penalty.ts 側で保証する」か「呼び出し側の責務のまま docs に明記する」かを確定する必要がある
 
 ## Step 1 スコープ外として確定した残作業（着手しない・記録のみ）
 
@@ -51,6 +57,26 @@
   - 完全な担保にはスキーマ検証ライブラリ（zod 等）の導入判断が必要で、
     `01_requirements.md` の技術スタックに無いため Step 1 では入れない
   - 担当: 未定（Step 2 以降でスキーマ検証を入れるか判断する）
+
+> 以下2件は Wave 5 バリアの `/code-review` で検出し、**ユーザー判断で Step 3 送り**と確定したもの。
+
+- [ ] `gameOver()` の殿堂スナップショットが3〜4項目ハードコードされている
+  - `src/lib/penalty.ts` の `gameOver` は `titles: []` / `defeatedBosses: []` / `survivedDays: 0` を
+    固定値で入れ、`longestStreak` に `state.streak`（最長ではなく現在値）を入れている
+  - 原因は `GameState`（`src/lib/types.ts:89-94`）に称号履歴・討伐ボス・開始日・最長ストリークを
+    保持するフィールドが無いこと。Issue #11 の範囲では埋めようがない
+  - `06_penalty.md` §5.2 はこれらの永久保存を求めているため、型設計から見直す必要がある
+  - Step 1 は `gameOver` を画面から呼ばないため実害なし
+  - 担当: **Step 3（GMエージェント）**。着手前に architect で `types.ts` の `GameState` 拡張を確定する
+
+- [ ] デバフの付与経路と `remainingDays` の減算処理が存在しない
+  - `06_penalty.md` §3 の「🔻戦闘不能（HP<10 で発生）」「🔻衰弱（デイリー3日連続未達で発生）」を
+    `state.debuffs` に**付与する経路が実装されていない**（`applyPenalty` が返すのは `bossFailed` の
+    🔻敗北のみ）。`PenaltyKind` も4種（`types.ts:51`）で「3日連続未達」を表現できない
+  - `Debuff.remainingDays` を日次で減算し期限切れを取り除く処理も無いため、
+    一度付いたデバフが永久に残る
+  - Step 1 は `src/data/*.json` の静的ダミーを表示するだけで日次更新を行わないため実害なし
+  - 担当: **Step 3（GMエージェント）**
 
 ## Step 2（デプロイ前にだけ必要・今は着手しない）
 - [ ] GitHubリポジトリ名のハイフン除去（`gh repo rename status-board -R rhashimoto-sudo/-status-board`）
@@ -186,7 +212,13 @@
 - [ ] `applyPenalty`: `phase:"calibration"` で全種別 `hpDelta` が0・GAME OVER発火なし。判定は関数入口1箇所のみ（C-9）
 - [ ] `gameOver`: 全ステータスexp0・HP100・`generation`+1、既存Hall of Fameエントリが消えず1件増える（AC-7）
 - [ ] `updateStreak`: 5/5→+1、4/5→0（AC-12）
-- [ ] `hpZone`: 51→safe/50→warn/26→warn/25→danger/62→safe（06 §7, Q-5）
+- [x] `hpZone`: 71→safe/70→warn/41→warn/40→danger/**62→warn**
+      （正典は `01_requirements.md:367-371` FR-8-1 と `06_penalty.md` §7。
+      `HP_COLOR_THRESHOLDS = { safe: 70, warn: 40 }`。
+      **旧記述「51→safe/50→warn/26→warn/25→danger/62→safe」は 06 §7 の改訂に追随していない
+      古い値だったため 2026-08-15 に修正した。実装（`79645f8`）が正しいので触らないこと。**
+      同じ旧値が `02_architecture.md:244,452,659` と Issue #12 の受け入れ条件にも残っており、
+      最終の `/spec-sync` で正典に揃える）
 - [ ] `npm test`（`src/test/penalty.test.ts`）が上記全てを検証し通る
 **対象ファイル**: `src/lib/penalty.ts`, `src/test/penalty.test.ts`
 **提供**: `clampHp`, `hpZone`, `hpState`, `strongestDebuff`, `debuffMultiplier`, `updateStreak`, `applyPenalty`, `isGameOver`, `gameOver`
@@ -199,7 +231,9 @@
 #### Issue #12: hero-header.tsx + hp-bar.tsx
 **目的**: TOTAL Lv/称号/EXPバー/🔥ストリーク/♥HPバー/🔻デバフを描画する
 **受け入れ条件**:
-- [ ] `hp-bar.tsx` は緑`>50`/黄`>25`/赤`<=25`で色分けし、赤のみ発光＋テキスト併記する（AC-14, C-15）
+- [ ] `hp-bar.tsx` は `hpZone()` の返り値 safe/warn/danger（= 緑 71〜100 / 黄 41〜70 / 赤 0〜40）で
+      色分けし、赤のみ発光＋テキスト併記する（AC-14, C-15）。閾値の数値を直書きしない
+      （**旧記述「緑`>50`/黄`>25`/赤`<=25`」は 06 §7 の改訂に未追随の古い値だったため 2026-08-15 に修正**）
 - [ ] `hero-header.tsx` は `state.phase==="calibration"` のときHPを `—` 表示する（07 描画モード）
 - [ ] デバフは色に加えアイコン+テキストを併記する（NFR-4）
 - [ ] 数値はすべて `StatValue`（等幅+tabular-nums）経由で表示する
