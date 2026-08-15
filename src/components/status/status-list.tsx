@@ -53,7 +53,6 @@ function StatusRow({ statusKey, status }: { statusKey: StatusKey; status: Status
   const title = level !== null ? titleFor(statusKey, level) : null;
   const remaining = level !== null ? expToNextLevel(status.exp) : null;
   const progress = level !== null ? levelProgress(status.exp) : 0;
-  const nextThreshold = remaining !== null ? status.exp + remaining : null;
 
   return (
     <div>
@@ -69,15 +68,19 @@ function StatusRow({ statusKey, status }: { statusKey: StatusKey; status: Status
       {measured && (
         <div className="mt-1 flex items-center gap-2">
           <div className="flex-1">
-            <ProgressBar value={progress} max={1} colorToken="cyan" label={`${statusKey} の累積EXP進捗`} />
+            <ProgressBar
+              value={progress}
+              max={1}
+              colorToken="cyan"
+              label={`${statusKey} Lv${level} の次のLvまでの進捗`}
+            />
           </div>
           <span className="whitespace-nowrap text-[13px] text-[color:var(--color-text-secondary)]">
-            {remaining === null || nextThreshold === null ? (
+            {remaining === null ? (
               <StatValue>MAX</StatValue>
             ) : (
               <>
-                <StatValue>{status.exp}</StatValue> / <StatValue>{nextThreshold}</StatValue>{" "}
-                (<StatValue>{remaining}</StatValue>)
+                次まで <StatValue>{remaining}</StatValue> EXP
               </>
             )}
           </span>
