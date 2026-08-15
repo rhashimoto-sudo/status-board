@@ -13,7 +13,7 @@ type PanelProps = {
 export function Panel({ heading, children, className }: PanelProps) {
   return (
     <div
-      className={`panel-surface relative rounded p-4 md:p-6 ${className ?? ""}`}
+      className={`panel-surface relative min-w-0 rounded p-4 md:p-6 ${className ?? ""}`}
     >
       <PanelBracket position="top-left" />
       <PanelBracket position="top-right" />
