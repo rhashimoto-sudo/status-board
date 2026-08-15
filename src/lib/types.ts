@@ -50,10 +50,17 @@ export type HpState = { current: number; max: number; zone: HpZone; incapacitate
 
 export type PenaltyKind = "dailyMiss" | "guerrillaExpired" | "missionFailed" | "bossFailed";
 export type PenaltyResult = {
+  /** このペナルティによる HP の増減量（表示用）。クランプされていない生の delta。 */
   hpDelta: number;
+  /**
+   * EXP の生の増減量。安全装置 S-1（EXPフロア。現Lvの下限累積EXPを下回らせず Lv・称号を下げない）は
+   * ここでは適用されていない。消費側は必ず `src/lib/exp.ts` の `applyExpDelta` を通すこと。
+   */
   expDeltas: readonly { key: StatusKey; amount: number }[];
   addedDebuff: Debuff | null;
   streakReset: boolean;
+  /** 適用後の確定 HP。`clampHp` 適用済みで常に 0〜100（S-2 を型の側で保証する）。 */
+  nextHp: number;
   gameOver: boolean;
 };
 

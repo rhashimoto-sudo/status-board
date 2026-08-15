@@ -93,14 +93,6 @@ export function isGameOver(hp: number): boolean {
   return hp <= 0;
 }
 
-const NO_PENALTY: PenaltyResult = {
-  hpDelta: 0,
-  expDeltas: [],
-  addedDebuff: null,
-  streakReset: false,
-  gameOver: false,
-};
-
 /**
  * 06_penalty.md §2 のペナルティ表を適用する。
  * S-4（測定期間の免除）は入口1箇所でのみ判定する（C-9）。
@@ -110,21 +102,34 @@ export function applyPenalty(
   state: GameState,
   ctx?: { baseExp?: number; expectedExp?: number; main?: MainStatusKey },
 ): PenaltyResult {
-  if (state.phase === "calibration") return NO_PENALTY; // ★ S-4: 判定は必ずここだけ
+  if (state.phase === "calibration") {
+    // ★ S-4: 判定は必ずここだけ。免除中でも「現在の HP」は正しく返す。
+    return {
+      hpDelta: 0,
+      expDeltas: [],
+      addedDebuff: null,
+      streakReset: false,
+      nextHp: clampHp(state.hp),
+      gameOver: false,
+    };
+  }
 
   switch (kind) {
     case "dailyMiss": {
       const hpDelta = HP_PENALTY.dailyMiss;
+      const nextHp = clampHp(state.hp + hpDelta);
       return {
         hpDelta,
         expDeltas: [{ key: "EXECUTION", amount: EXP_PENALTY.dailyMissExecution }],
         addedDebuff: null,
         streakReset: true,
-        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+        nextHp,
+        gameOver: isGameOver(nextHp),
       };
     }
     case "guerrillaExpired": {
       const hpDelta = HP_PENALTY.guerrillaExpired;
+      const nextHp = clampHp(state.hp + hpDelta);
       const baseExp = ctx?.baseExp ?? 0;
       const expDeltas: { key: MainStatusKey; amount: number }[] = [];
       if (ctx?.main) {
@@ -139,11 +144,13 @@ export function applyPenalty(
         expDeltas,
         addedDebuff: null,
         streakReset: false,
-        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+        nextHp,
+        gameOver: isGameOver(nextHp),
       };
     }
     case "missionFailed": {
       const hpDelta = HP_PENALTY.missionFailed;
+      const nextHp = clampHp(state.hp + hpDelta);
       const expectedExp = ctx?.expectedExp ?? 0;
       return {
         hpDelta,
@@ -152,17 +159,20 @@ export function applyPenalty(
         ],
         addedDebuff: null,
         streakReset: false,
-        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+        nextHp,
+        gameOver: isGameOver(nextHp),
       };
     }
     case "bossFailed": {
       const hpDelta = HP_PENALTY.bossFailed;
+      const nextHp = clampHp(state.hp + hpDelta);
       return {
         hpDelta,
         expDeltas: [],
         addedDebuff: { kind: "defeated", remainingDays: DEBUFF_DURATION_DAYS.defeated },
         streakReset: false,
-        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+        nextHp,
+        gameOver: isGameOver(nextHp),
       };
     }
   }

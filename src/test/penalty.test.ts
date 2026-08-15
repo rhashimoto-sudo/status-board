@@ -102,6 +102,16 @@ describe("applyPenalty", () => {
     }
   });
 
+  it("phase:calibration では全種別で nextHp が clampHp(state.hp) と一致する", () => {
+    const state = makeState({ phase: "calibration", hp: 5 });
+    for (const kind of ["dailyMiss", "guerrillaExpired", "missionFailed", "bossFailed"] as const) {
+      const result = applyPenalty(kind, state);
+      expect(result.hpDelta).toBe(0);
+      expect(result.nextHp).toBe(clampHp(state.hp));
+      expect(result.gameOver).toBe(false);
+    }
+  });
+
   it("dailyMiss: HP-10・EXECUTION-10・streakReset", () => {
     const result = applyPenalty("dailyMiss", makeState({ hp: 50 }));
     expect(result.hpDelta).toBe(-10);
@@ -114,6 +124,13 @@ describe("applyPenalty", () => {
     expect(result.gameOver).toBe(true);
   });
 
+  it("dailyMiss: HP5から適用で hpDelta:-10 と nextHp:0 が両立する（クランプは nextHp のみ）", () => {
+    const result = applyPenalty("dailyMiss", makeState({ hp: 5 }));
+    expect(result.hpDelta).toBe(-10);
+    expect(result.nextHp).toBe(0);
+    expect(result.gameOver).toBe(isGameOver(result.nextHp));
+  });
+
   it("guerrillaExpired: 主ステ-(基礎値×50%)・BRIDGE-20・HP-25", () => {
     const result = applyPenalty("guerrillaExpired", makeState({ hp: 50 }), {
       baseExp: 60,
@@ -124,12 +141,16 @@ describe("applyPenalty", () => {
       { key: "TECH", amount: -30 },
       { key: "BRIDGE", amount: -20 },
     ]);
+    expect(result.nextHp).toBe(25);
+    expect(result.gameOver).toBe(isGameOver(result.nextHp));
   });
 
   it("missionFailed: EXECUTION-(予定EXP×30%)・HP-40", () => {
     const result = applyPenalty("missionFailed", makeState({ hp: 50 }), { expectedExp: 100 });
     expect(result.hpDelta).toBe(-40);
     expect(result.expDeltas).toEqual([{ key: "EXECUTION", amount: -30 }]);
+    expect(result.nextHp).toBe(10);
+    expect(result.gameOver).toBe(isGameOver(result.nextHp));
   });
 
   it("bossFailed: EXP減点なし・敗北デバフ付与・HP-50", () => {
@@ -137,6 +158,19 @@ describe("applyPenalty", () => {
     expect(result.hpDelta).toBe(-50);
     expect(result.expDeltas).toEqual([]);
     expect(result.addedDebuff).toEqual({ kind: "defeated", remainingDays: 7 });
+    expect(result.nextHp).toBe(0);
+    expect(result.gameOver).toBe(isGameOver(result.nextHp));
+  });
+
+  it("bossFailed: HP100から適用で nextHp:50・hpDelta:-50", () => {
+    const result = applyPenalty("bossFailed", makeState({ hp: 100 }));
+    expect(result.hpDelta).toBe(-50);
+    expect(result.nextHp).toBe(50);
+    expect(result.gameOver).toBe(isGameOver(result.nextHp));
+  });
+
+  it("回復側の境界: clampHp(98+50) === 100 が守られる（HP上限のクランプ確認）", () => {
+    expect(clampHp(98 + 50)).toBe(100);
   });
 });
 
