@@ -24,7 +24,9 @@
   /* ── テキスト ── */
   --color-text-primary: #e6e9f2;
   --color-text-secondary: #9aa3b8;
-  --color-text-muted: #6b7490;
+  /* 旧値 #6b7490 は最も明るいパネル面（--color-surface-raised）に対し 3.83:1 で
+     WCAG AA（通常テキスト 4.5:1）を満たさなかった。全パネル面で 4.5:1 以上になる値に上げている。 */
+  --color-text-muted: #7b84a1;
 
   /* ── HP・状態色 ── */
   --color-hp-safe: #22c55e;
