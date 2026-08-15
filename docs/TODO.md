@@ -11,9 +11,8 @@
 
 ## 進行中
 - [ ] Wave 5 / Issue #11（penalty.ts）
-  - 状態: dev-phase1-worker による実装完了。`src/lib/penalty.ts` / `src/test/penalty.test.ts` を
-    作成し、`develop/step1-dashboard-issue-11` にコミット済み。`npm run verify`（typecheck/test 127
-    passed/build）・`npm run check:cycles`（循環0件）・`npm run lint` すべて通過
+  - 状態: 未着手。`develop/step1-dashboard` に Wave 1〜4（Issue #1〜#10）合体済み・
+    `npm run verify` 通過（Tests 107 passed）・`npm run check:cycles` 循環0件
   - 次の一手: `rules/parallel-worktree.md` の**herdr 正規手順**（`herdr worktree create` →
     `herdr agent start <issue-id> --cwd <worktree> --split down -- claude --agent dev-phase1-worker`）
     で起動する。Wave 4 までは生の `git worktree` + Agentツールで実行しており手順から外れていた

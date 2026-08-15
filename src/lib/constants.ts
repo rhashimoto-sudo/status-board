@@ -42,10 +42,9 @@ export const HP_PENALTY = {
   dailyMiss: -10, guerrillaExpired: -25, missionFailed: -40, bossFailed: -50,
 } as const;
 export const HP_RECOVERY = { dailyAllClear: 5, missionCleared: 20, bossCleared: 50 } as const;
-// 02_architecture.md §4.6 / §8.2 / §10 Q-5・TODO.md Issue#11・#12 の受け入れ条件が
-// hpZone(51→safe/50→warn/26→warn/25→danger/62→safe) を明示しているため、この閾値を正とする。
-// 06_penalty.md §7 本文の「71/41」改訂記述は #11 着手時点でこれらの正典と食い違っており未追随。
-export const HP_COLOR_THRESHOLDS = { safe: 50, warn: 25 } as const;  // >50 緑 / >25 黄 / <=25 赤
+// 06_penalty.md §7「改訂の経緯（確定済み）」: 旧案 >50緑/>25黄/<=25赤 は警告が遅すぎるため改訂。
+// 現行: 71〜100 緑（safe）/ 41〜70 黄（warn）/ 0〜40 赤（danger）。旧案の 50/25 は使わない。
+export const HP_COLOR_THRESHOLDS = { safe: 70, warn: 40 } as const;  // >70 緑 / >40 黄 / <=40 赤
 export const HP_INCAPACITATED_BELOW = 10;      // hp < 10 で戦闘不能
 
 // ── EXP 減点（06_penalty.md §2）

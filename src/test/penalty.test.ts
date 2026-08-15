@@ -53,13 +53,17 @@ describe("clampHp", () => {
   });
 });
 
+// 正典: 01_requirements.md FR-8-1 / 06_penalty.md §7（緑71〜100 / 黄41〜70 / 赤0〜40。
+// 旧案「緑>50/黄>25/赤<=25」は警告が遅すぎるため改訂済みで採用しない）。
 describe("hpZone", () => {
   it.each([
-    [51, "safe"],
-    [50, "warn"],
-    [26, "warn"],
-    [25, "danger"],
-    [62, "safe"],
+    [71, "safe"],
+    [70, "warn"],
+    [41, "warn"],
+    [40, "danger"],
+    [62, "warn"],
+    [100, "safe"],
+    [0, "danger"],
   ] as const)("hp=%i -> %s", (hp, expected) => {
     expect(hpZone(hp)).toBe(expected);
   });
