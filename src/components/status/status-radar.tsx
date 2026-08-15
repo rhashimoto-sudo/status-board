@@ -114,8 +114,20 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
   return (
     <div className="w-full">
       {/* centerSlot をレーダー中心に絶対配置するための相対コンテナ（A-4）。
-          ResponsiveContainer は aspect=1 の正方形なので、中心は常に 50%/50%。 */}
+          ResponsiveContainer は aspect=1 の正方形なので、中心は常に 50%/50%。
+          centerSlot は DOM 順で ResponsiveContainer より「前」に置く（A-1）。
+          兄弟要素は DOM 順が描画順（後勝ち）になるため、紋章を先に置き
+          チャート（SVG、背景透明）を後に重ねると、ポリゴン・グリッド・軸ラベルが
+          常に紋章の上に描画される。これにより Lv2〜3 の頂点が紋章に隠れなくなる。 */}
       <div className="relative w-full">
+        {centerSlot && (
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            aria-hidden={false}
+          >
+            {centerSlot}
+          </div>
+        )}
         <ResponsiveContainer width="100%" aspect={1}>
           {/* outerRadius を 70% → 58% → 55% に縮小し、375px 幅でも軸ラベル
               （🔥 LEARNING 等）が SVG 端でクリップされない余白を確保する（B-1）。
