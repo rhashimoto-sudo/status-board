@@ -10,25 +10,22 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] ステータス一覧の整合確認 — team-lead によるブラウザ実測待ち（**ロットB に進まない**）
-  - 状態: Wave 6 ロットA（#12〜#14）+ 指摘10件の修正（#lotA-fix）+ 称号バグ/レーダー微調整/
-    背景刷新（#titles-bg）+ パネル質感3件（#panel-skin）+ レーダー可視性2件（#radar-visibility）
-    + ステータス一覧の分母統一（#statuslist-progress）まで合体済み（`e7ae0c5`）。
-    `npm run verify` 通過 / Tests **147 passed** / 循環0件
-  - team-lead が実測済み: 375px 横スクロールなし（AC-13）、軸ラベルのはみ出し0件、
-    総合称号が「実践者」で表示（称号バグ修正が実画面で有効）、
-    見出しのシステムラベル化で `3.9` が画面内最強要素になったこと、
-    パネル上辺のシアングラデーションとブラケット拡大、
-    紋章 130px → 48px で9軸すべての頂点が視認可能、ゴースト破線も視認可能
+- [ ] Tab2 の見た目・動作確認 — team-lead によるブラウザ実測待ち（**ロットC に進まない**）
+  - 状態: Wave 6 ロットA（#12〜#14）+ ロットB（#15〜#17）+ 各種指摘修正まで合体済み（`b2b10af`）。
+    `npm run verify` 通過 / Tests **153 passed / 7ファイル** / `check:cycles` 循環0件
+  - team-lead が実測済み（ロットA まで）: 375px 横スクロールなし（AC-13）、軸ラベルのはみ出し0件、
+    総合称号が「実践者」で表示、見出しのシステムラベル化で `3.9` が画面内最強要素、
+    パネル上辺のシアングラデーションとブラケット拡大、紋章 130px → 48px で9軸の頂点が視認可能、
+    ゴースト破線も視認可能、ステータス一覧9行のバーとテキストが整合
   - 次の一手: 以下を team-lead がブラウザで確認する。静的解析では判定できない
-    1. **9行すべてでバーの充填率と「次まで n EXP」が整合して見えるか**（本件）
-    2. 「次まで 581 EXP」が 375px で折り返して崩れないか（本件。構造上は2段構成 +
-       `whitespace-nowrap` のため称号と同じ行には並ばない）
-    3. （持ち越し）`body::before`/`::after` の `z-index: -1` が意図どおり描画されるか
-    4. （持ち越し）11px・`tracking-[0.18em]` の見出しが日本語＋絵文字で読みやすいか
-       （`uppercase` は日本語・絵文字に効かない）
+    1. **カウントダウンが毎秒動くか**。残り3日未満で赤く発光するか（`.danger-glow` の再利用）
+    2. **Tab2 の4ブロックが 375px で横スクロールしないか**（カウントダウン・敗北ログは横に長くなりやすい）
+    3. デイリーの損失予告・ロック通知の文言（`⚠ あと n つでストリークが途切れます` /
+       `未達なら HP −10 / ⚔️EXECUTION −10 / 🔥 → 0` / `🔒 週中はロック中。次に選び直せるのは …`）
+    4. （持ち越し）`body::before`/`::after` の `z-index: -1` が意図どおり描画されるか
+    5. （持ち越し）11px・`tracking-[0.18em]` の見出しが日本語＋絵文字で読みやすいか
   - 意匠仕様は `docs/11_design_system.md` に追記済み（Wave 9 の AC-14 監査で剥がされないため）
-  - それが通ってからロットB を指示してもらう
+  - それが通ってからロットC を指示してもらう
 - [x] **タブ構成は現行仕様のまま維持（ユーザー確定・変更しない）**
   - 情報アーキテクチャのレビューで出た3案（デイリー/ボスへの HP 遷移 `♥ 62 → 52` の併記 /
     Tab3 の GM学習状況・殿堂を折りたたみに降格 / 敗北ログを Tab2 → Tab3 へ移動）は
@@ -39,7 +36,7 @@
     他タブには出さない」も維持。**4つ目のタブは作らない**（375px でタブバーが 65px 溢れ
     AC-11 と本文16px規約に衝突するため）
   - **ロットB・ロットC はこの現行仕様どおりに実装すること**
-- [ ] **ロットB（#15〜#17）・ロットC（#18〜#19）は未着手**
+- [ ] **ロットC（#18〜#19）は未着手**（ロットA・ロットB は完了・記録済み）
   - Wave 6 の実行単位はユーザー承認済みの3ロット。ロット内は並列、ロット間は逐次。
     各ロットの合体後にレビュー区切りを入れる
 - [ ] **`/spec-sync` で是正する docs の追随漏れ（全Wave完了後）**
@@ -50,6 +47,14 @@
     帯内進捗 29.6% ではなく累積比 70.8% に一致している。
     **ユーザー確定方針**（バー = 帯内進捗 / テキスト = 「次まで n EXP」）に合わせて
     表と ASCII 例の両方を書き直す（例は充填 29.6% 相当 + `次まで 461 EXP`）
+  - **`09_dashboard_spec.md:153` の損失予告の例が `🔥27日` を含んでいる**（ロットBで判明）。
+    同 `:22`「HP・ストリーク・TOTAL Lv は Tab1 のヒーローヘッダーにのみ存在し他タブには出さない」と
+    衝突する。ルールとして明記された :22 を優先した実装に合わせ、例から日数を除く
+  - **タイムゾーンの正典化**（ロットBで判明）。`10_notion_schema.md:64` は
+    「スナップショットの取得時刻・タイムゾーン | 未確定」のままだが、実装は司令塔判断で
+    **`Asia/Tokyo` 固定**（`constants.ts` の `DISPLAY_TIME_ZONE`、`src/lib/datetime.ts` 経由）とした。
+    根拠は日本語の個人用ダッシュボードであることと、ローカル開発（JST）と Vercel（UTC）で
+    表示が変わらないことが要件（AC-10 と同じ思想）。これを docs に確定記載する
   - 旧 HP 閾値「緑 `>50` / 黄 `>25` / 赤 `<=25`」が
     `02_architecture.md:244,452,659` と `09_dashboard_spec.md:62` に残っている。
     正典は `01_requirements.md:367-371`（FR-8-1）と `06_penalty.md` §7 の 71/41/0-40
@@ -132,41 +137,6 @@
 > **残 Issue: #15〜#24。**
 
 ### Wave 6（依存: Wave5, Wave3, Wave2）— 各タブの葉パネル（相互に独立・ファイル重複なし）
-
-#### Issue #15: urgent-board.tsx + countdown.tsx
-**目的**: ボス・ゲリラを期限昇順で並べる緊急ボードと、秒まで動くカウントダウンを実装する
-**受け入れ条件**:
-- [ ] `countdown.tsx` が `setInterval`/`clearInterval` を持つ**唯一**のファイルであり、`Date.now()`との差分を毎秒再計算する（自前減算禁止。C-3, C-4）
-- [ ] 残り3日未満（`URGENT_GLOW_WITHIN_DAYS`）で赤く発光する。発光は`prefers-reduced-motion`で停止し静的な赤になる（C-16）
-- [ ] `urgent-board.tsx` は deadline 昇順で整列し、`countdown.tsx` へ ISO文字列の `deadline` のみを渡す
-**対象ファイル**: `src/components/mission/urgent-board.tsx`, `src/components/mission/countdown.tsx`
-**提供**: `UrgentBoard({bosses, guerrillas})`, `Countdown({deadline}: {deadline: string})`
-**依存契約**: Issue#2の`constants.ts`（URGENT_GLOW_WITHIN_DAYS）/ Issue#2の`types.ts`（Boss/GuerrillaQuest）
-**Wave**: 6
-**担当エージェント**: dev-phase1-worker
-
-#### Issue #16: mission-list.tsx + daily-quests.tsx
-**目的**: 進行中ミッションの子クエスト進捗と、固定5個の読み取り専用デイリーチェックリストを描画する
-**受け入れ条件**:
-- [ ] `daily-quests.tsx` は書き込み導線を持たない（読み取り専用。C-21）。未達時に失うHP/EXPを事前明示する
-- [ ] 週中は🔒ロック表示され、次に選び直せる日を明示する
-- [ ] `mission-list.tsx` は子クエストの進捗バーを `ProgressBar` で描画する
-**対象ファイル**: `src/components/mission/mission-list.tsx`, `src/components/mission/daily-quests.tsx`
-**提供**: `MissionList({missions})`, `DailyQuests({dailies})`
-**依存契約**: Issue#2の`types.ts`（Mission/DailyQuest）/ Issue#3の`ProgressBar`
-**Wave**: 6
-**担当エージェント**: dev-phase1-worker
-
-#### Issue #17: defeat-log.tsx
-**目的**: 討伐失敗・期限切れ・失敗ミッションの墓標一覧を描画する
-**受け入れ条件**:
-- [ ] 被ダメージ（HP/EXP）とリベンジ対象フラグを表示する
-- [ ] 敗北種別ごとにラベルを出し分ける（`DefeatEntry.kind`）
-**対象ファイル**: `src/components/mission/defeat-log.tsx`
-**提供**: `DefeatLog({defeats: readonly DefeatEntry[]})`
-**依存契約**: Issue#2の`types.ts`（DefeatEntry）
-**Wave**: 6
-**担当エージェント**: dev-phase1-worker
 
 #### Issue #18: growth-chart.tsx + activity-heatmap.tsx
 **目的**: 既定3系列+専門7系列トグルの折れ線グラフと、自前SVGの活動ヒートマップを実装する
