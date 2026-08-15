@@ -12,6 +12,7 @@ import {
   NO_DEBUFF_MULTIPLIER,
   STATUS_ORDER,
 } from "./constants";
+import { dateKeyInTimeZone } from "./datetime";
 import { computeTotalLevel, levelsOf } from "./level";
 import type {
   Debuff,
@@ -178,14 +179,6 @@ export function applyPenalty(
   }
 }
 
-/** ローカルタイムゾーンで `YYYY-MM-DD` を生成する（`toISOString` はUTCになりJST深夜にずれるため使わない）。 */
-function localDateString(date: Date): string {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
-}
-
 /**
  * 06_penalty.md §5.3 の手順で GAME OVER を処理する。
  * 1.スナップショット 2.entries に push（既存を消さない） 3.全初期化 4.HP=100 5.generation+1 6.phase は "main" のまま
@@ -199,7 +192,7 @@ export function gameOver(state: GameState, hallOfFame: HallOfFame): { state: Gam
     defeatedBosses: [],
     longestStreak: state.streak,
     survivedDays: 0,
-    endedAt: localDateString(new Date()),
+    endedAt: dateKeyInTimeZone(new Date()),
   };
 
   // §5.1 は exp/Lv/称号だけでなく「実績・進行中クエストの進捗」も初期化対象とする。

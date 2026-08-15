@@ -230,17 +230,18 @@ describe("gameOver", () => {
     }
   });
 
-  it("endedAt はローカルタイムゾーンの日付（UTC変換でずれない）", () => {
+  it("endedAt は Asia/Tokyo 固定の日付（実行環境のTZに依存しない。UTC変換でずれない）", () => {
     const state = makeState({ hp: 0 });
     const hallOfFame: HallOfFame = { generation: 1, entries: [] };
-    const fixed = new Date(2026, 0, 15, 2, 0, 0); // ローカル 2026-01-15 02:00
+    // UTC 2026-01-14T16:30:00Z == JST 2026-01-15 01:30（日付がまたぐケース）
+    const fixed = new Date("2026-01-14T16:30:00.000Z");
     const originalDate = globalThis.Date;
     class MockDate extends originalDate {
       constructor() {
         super(fixed.getTime());
       }
     }
-    // @ts-expect-error テスト用に Date をローカル固定日時にモックする
+    // @ts-expect-error テスト用に Date を固定日時にモックする
     globalThis.Date = MockDate;
     try {
       const result = gameOver(state, hallOfFame);

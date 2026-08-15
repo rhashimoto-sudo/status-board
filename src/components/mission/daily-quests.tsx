@@ -1,6 +1,7 @@
 import { Panel } from "@/components/ui/panel";
 import { StatValue } from "@/components/ui/stat-value";
 import { EXP_PENALTY, HP_PENALTY } from "@/lib/constants";
+import { weekdayIndexInTimeZone } from "@/lib/datetime";
 import type { DailyQuest } from "@/lib/types";
 
 type DailyQuestsProps = {
@@ -9,8 +10,10 @@ type DailyQuestsProps = {
 
 const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
+// `new Date(iso).getDay()` はランタイムのローカルタイムゾーンに依存し、ローカル（JST）開発と
+// Vercel の Node ランタイム（UTC）で曜日がずれるため使わない（レビュー指摘A）。
 function weekdayLabel(iso: string): string {
-  return `${WEEKDAY_LABELS[new Date(iso).getDay()]}曜日`;
+  return `${WEEKDAY_LABELS[weekdayIndexInTimeZone(new Date(iso))]}曜日`;
 }
 
 /**

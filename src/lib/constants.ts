@@ -66,6 +66,11 @@ export const NO_DEBUFF_MULTIPLIER = 1.0;
 export const DAILY_QUEST_COUNT = 5;            // 固定5個
 export const URGENT_GLOW_WITHIN_DAYS = 3;      // 残り3日未満で赤く発光
 
+// ── 表示タイムゾーン（司令塔確定。docs/10_notion_schema.md:64 は未確定のためここで固定する）
+// 本プロジェクトは日本語の個人用ダッシュボードであり、ローカル開発（JST）と
+// Vercel の Node ランタイム（UTC）で曜日・日付の表示が変わらないことを要件とする。
+export const DISPLAY_TIME_ZONE = "Asia/Tokyo" as const;
+
 // ── 測定期間（07 CALIBRATION）
 export const CALIBRATION_TOTAL_DAYS = 14;
 export const CALIBRATION_TOTAL_QUESTS = 18;
