@@ -48,7 +48,9 @@ export function DailyQuests({ dailies }: DailyQuestsProps) {
       </ul>
 
       <div className="mt-4 border-t border-[color:var(--color-border-hairline)] pt-3 text-[13px] text-[color:var(--color-text-secondary)]">
-        {remaining === 0 ? (
+        {dailies.length === 0 ? (
+          <p>本日のデイリーはありません</p>
+        ) : remaining === 0 ? (
           <p>✓ 本日達成済み</p>
         ) : (
           <>
