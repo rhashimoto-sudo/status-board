@@ -51,14 +51,25 @@ const BASE_SERIES: readonly BaseSeriesDef[] = [
   {
     key: "EXECUTION",
     label: "⚔️ EXECUTION",
-    stroke: "color-mix(in srgb, var(--color-accent-cyan) 60%, white)",
+    // 11_design_system.md §3.1: EXECUTION は「Cyan 低彩度」指定（globals.css の @theme 参照）。
+    // white を混ぜると明度が上がり TOTAL より明るく主役級に見えてしまうため、
+    // globals.css の @theme に定義した専用トークンを使う（新しい色相は追加しない）。
+    stroke: "var(--color-accent-cyan-soft)",
   },
 ];
 
 // 専門7つはシアン〜バイオレット間の同一色相帯の明度違いで生成する（赤・緑・黄は使わない）。
-// 等間隔の8分割点のうち両端（0%・100% = 既定2系列と同じ色）を避けた内側7点を採る。
+// 8分割の内側7点（12.5%〜87.5%）では両端（TOTAL=Cyan 0%・LEARNING=Violet 100%）との
+// 差がわずか12.5ポイントしかなく、隣接する専門系列(INT/ENGLISH)が既定系列と実測でほぼ
+// 同色になっていた。25%〜75%の帯に7点を均等配置することで、両端との距離を25ポイント
+// まで広げ、隣接専門系列どうしの間隔も (75-25)/6 ≈ 8.33ポイントを確保する。
 function specialtyColor(index: number): string {
-  const ratio = ((index + 1) / (SPECIALTIES.length + 1)) * 100;
+  const bandMin = 25;
+  const bandMax = 75;
+  const ratio =
+    SPECIALTIES.length <= 1
+      ? (bandMin + bandMax) / 2
+      : bandMin + (index / (SPECIALTIES.length - 1)) * (bandMax - bandMin);
   return `color-mix(in srgb, var(--color-accent-violet) ${ratio}%, var(--color-accent-cyan) ${100 - ratio}%)`;
 }
 

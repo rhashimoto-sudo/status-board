@@ -8,6 +8,9 @@
   /* ── アクセント（シアン × バイオレットの2色のみ） ── */
   --color-accent-cyan: #22d3ee;
   --color-accent-violet: #8b5cf6;
+  /* シアンの明度違い（11_design_system.md §3.1: EXECUTION = Cyan 低彩度）。
+     新しい色相は追加せず、既存のシアンの明度バリエーションとしてのみ使う。 */
+  --color-accent-cyan-soft: #67e8f9;
 
   /* ── 背景・サーフェス ── */
   --color-bg: #0a0b12;
