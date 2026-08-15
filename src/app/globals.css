@@ -124,7 +124,7 @@ body::after {
 }
 
 /* ── パネル面（system window 風。Issue #panel-skin 追記分） ──
-   上辺だけシアンの光を受ける二重グラデーション。box-shadow は使わず
+   上辺だけシアンの光を受ける二重グラデーション。発光用プロパティは使わず
    background と border-color のみで質感を出す（AC-14 を維持）。 */
 .panel-surface {
   background:

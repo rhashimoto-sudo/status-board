@@ -20,10 +20,10 @@ export function Panel({ heading, children, className }: PanelProps) {
       <PanelBracket position="bottom-left" />
       <PanelBracket position="bottom-right" />
 
-      <div className="text-[18px] font-semibold leading-[1.3] text-[color:var(--color-text-primary)]">
+      <div className="text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-[color:var(--color-text-secondary)]">
         {heading}
       </div>
-      <div className="mt-2 border-t border-[color:var(--color-border-hairline)]" />
+      <div className="mt-2 panel-heading-divider" />
       <div className="mt-4">{children}</div>
     </div>
   );

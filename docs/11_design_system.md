@@ -180,6 +180,86 @@
 
 ---
 
+## 6.2 パネルの質感強化（Issue #panel-skin）
+
+> `src/components/ui/panel.tsx` は全パネル共通部品。デザインレビューで採用された3件を実装した。
+> box-shadow は新規に増やさず、すべて `background` / `border-color` のみで表現する（AC-14 維持）。
+
+### 追加した CSS 変数（`@theme`）
+
+| 変数名 | 値 | 用途 |
+|---|---|---|
+| `--color-panel-top-glow` | `rgba(34, 211, 238, 0.045)` | パネル面の上辺だけを薄く光らせる縦グラデーションの起点色 |
+| `--color-panel-edge-top` | `rgba(34, 211, 238, 0.22)` | パネル外枠の上辺だけに使う `border-top-color`（既存の `--color-border-bracket`（0.35・角ブラケット用）とは意図的に不透明度を分離） |
+
+背景色の階調（`#141726` 相当 / `#11131d` 相当 / `#0a0b12` 相当）は新規トークンを追加せず、
+既存の `--color-surface-raised` / `--color-surface` / `--color-bg` をそのまま再利用した。
+
+### 1. パネル面のグラデーション構成（`.panel-surface`）
+
+2層の `background` を重ねる。
+
+| 層 | 役割 |
+|---|---|
+| 上層 `linear-gradient(180deg, --color-panel-top-glow 0%, transparent 42%)` | 上辺のみシアンの微光を受けているように見せる。42% で完全に透明になり本文には掛からない |
+| 下層 `linear-gradient(160deg, --color-surface-raised 0%, --color-surface 55%, --color-bg 100%)` | パネル面自体の階調（左上が明るく右下に向けて沈む） |
+
+外枠は `border: 1px solid --color-border-hairline` を基本とし、`border-top-color` のみ
+`--color-panel-edge-top` に差し替えて上辺だけ光を受けている印象を作る。9パネルが縦に並んだとき
+「上辺が薄く光る板が積層している」ように見える。
+
+### 2. ブラケット装飾の仕様
+
+- サイズ: `w-3 h-3`（12px）→ **`w-4 h-4`（16px）** に拡大
+- 太さ: `border-*-2` → **`border-*-[1.5px]`** に変更（各辺 1.5px 相当）
+- 色: 既存の `--color-border-bracket`（`rgba(34,211,238,0.35)`）をそのまま流用（新規トークン不要）
+- 追加装飾: 上辺の左右ブラケットの内側（`top-0 left-4` / `top-0 right-4`）から水平に **24px**
+  （`w-6`）のシアングラデーション線（`bg-gradient-to-r` / `bg-gradient-to-l`、起点は
+  `--color-border-bracket`、終点 `transparent`）を追加し「窓が開いている」印象を強化する
+- これらの線・拡大したブラケットはすべて `pointer-events-none` の `absolute` 配置で、
+  `Panel` の `relative` コンテナ内に収まる。ドキュメントの通常フローに参加せず、
+  375px でも横スクロールを発生させない（AC-13 維持）
+
+### 3. パネル見出しのタイポグラフィ
+
+| 項目 | 変更前 | 変更後 |
+|---|---|---|
+| サイズ | 18px | **11px** |
+| ウェイト | 600 | 600（変更なし） |
+| 行間 | 1.3 | `leading-none` |
+| 字間 | なし | **`tracking-[0.18em]`** |
+| 変換 | なし | **`uppercase`** |
+| 色 | `--color-text-primary`（`#e6e9f2`） | **`--color-text-secondary`（`#9aa3b8`）** |
+
+見出しは情報ではなくラベルであるため、本文（TOTAL Lv の数値など）と同格の白テキストから
+1段階トーンを落とし、視線が本体データに集まるようにした。
+
+**コントラスト比の実測値**: `--color-text-secondary`（`#9aa3b8`）を `--color-surface`
+（`#11131d`、パネル面のベース色相当）の上に置いた場合の相対輝度比を WCAG の計算式で算出すると
+**約 7.32:1**。11px（小サイズ扱い、AA 基準 4.5:1）に対して十分な余裕があるため、
+サイズはそのまま 11px を採用し、色トークンの変更も行わなかった。
+
+見出し直下の区切り線は `.panel-heading-divider` として新設し、単色の hairline から
+「左だけシアン」のグラデーション（`linear-gradient(90deg, --color-border-bracket 0%,
+--color-border-hairline 28%, transparent 100%)`）に変更した。
+
+### `unique-skill-panel.tsx` / `balance-meter.tsx` への影響確認
+
+両ファイルは `Panel` の `heading` に `<span>🧬 固有スキル</span>` / `<span>⚖️ 歪みメーター</span>`
+という単純な絵文字+テキストしか渡しておらず、見出しの文字装飾（サイズ・字間・色）はすべて
+`Panel` 側の共通スタイルに委ねている。今回のタイポグラフィ変更は両パネルにも一様に適用されるが、
+これは意図した挙動（全パネル共通のシステムラベル化）であり、両ファイル自体への変更は行っていない。
+レイアウト崩れ（折り返し・はみ出し）が起きないことを目視・`npm run verify` で確認済み。
+
+### なぜ `box-shadow` を使わないのか（再掲）
+
+AC-14（`grep -rn "box-shadow" src/` の出現箇所がカウントダウンと HP 危険域の2つだけであること）と
+「発光はカウントダウンと HP 危険域のみ」の制約（§6）を維持するため。パネル面の質感・ブラケットの
+拡大・見出しの弱色化はいずれも `background` / `border-color` / `color` のみで実現しており、
+`box-shadow` を新規に一切追加していない（grep で4行のまま変化しないことを確認済み）。
+
+---
+
 ## 7. スペーシングスケール
 
 | トークン | 値 | 用途 |
