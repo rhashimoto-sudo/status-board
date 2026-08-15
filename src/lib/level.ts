@@ -1,4 +1,4 @@
-import { LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER, TOTAL_TOP_N, TOTAL_WEIGHT_TOP, TOTAL_WEIGHT_ALL } from "./constants";
+import { LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER, TOTAL_TOP_N, TOTAL_WEIGHT_TOP, TOTAL_WEIGHT_ALL, WEAK_AXIS_COUNT } from "./constants";
 import type { StatusKey, StatusMap } from "./types";
 
 function clampLevel(level: number): number {
@@ -72,4 +72,24 @@ export function computeTotalLevel(statuses: StatusMap): number {
 export function totalLevelProgress(totalLevel: number): number {
   const fraction = totalLevel - Math.floor(totalLevel);
   return Math.min(1, Math.max(0, fraction));
+}
+
+/**
+ * 最も Lv が低い軸を返す（CLAUDE.md「弱い領域が得意領域の陰に隠れて放置される」への対処）。
+ * 同値のときは STATUS_ORDER 順で決定的に選ぶ（computeTotalLevel の上位5選出と同じ規則）。
+ * calibration 中の未測定軸は判定対象から外す（"???" の軸を「最も薄い」と断定しないため）。
+ */
+export function weakestStatuses(
+  statuses: StatusMap,
+  count: number = WEAK_AXIS_COUNT,
+): readonly { key: StatusKey; level: number }[] {
+  const levels = levelsOf(statuses);
+  const entries = STATUS_ORDER
+    .map((key, index) => ({ key, index, level: levels[key], measured: statuses[key].measured }))
+    .filter((e) => e.measured);
+  const sorted = [...entries].sort((a, b) => {
+    if (a.level !== b.level) return a.level - b.level;
+    return a.index - b.index;
+  });
+  return sorted.slice(0, count).map(({ key, level }) => ({ key, level }));
 }

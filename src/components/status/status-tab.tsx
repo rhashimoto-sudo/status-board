@@ -6,11 +6,17 @@ import { StatusList } from "@/components/status/status-list";
 import { StatusRadar, type StatusRadarPoint } from "@/components/status/status-radar";
 import { UniqueSkillPanel } from "@/components/status/unique-skill-panel";
 import { STATUS_ORDER } from "@/lib/constants";
-import { computeTotalLevel, levelFromExp, levelsOf } from "@/lib/level";
+import { computeTotalLevel, levelFromExp, levelsOf, weakestStatuses } from "@/lib/level";
 import { hpState } from "@/lib/penalty";
 import { buildUniqueSkill } from "@/lib/skill";
 import { totalTitleFor } from "@/lib/titles";
 import type { DashboardData, StatusKey } from "@/lib/types";
+
+// 一覧・ヒーローで共通の意匠（03_status_system.md §1）。
+const STATUS_ICONS: Readonly<Record<StatusKey, string>> = {
+  INT: "🧠", TECH: "💻", DATA: "📊", MARKETING: "📣", PM: "👑",
+  BRIDGE: "🤝", ENGLISH: "🌎", LEARNING: "🔥", EXECUTION: "⚔️",
+};
 
 type StatusTabProps = { data: DashboardData };
 
@@ -37,6 +43,9 @@ export function StatusTab({ data }: StatusTabProps) {
   }));
 
   const skill = buildUniqueSkill(state.uniqueSkillActivations, state.statuses);
+  const weak = weakestStatuses(state.statuses);
+  const weakKeys = weak.map((w) => w.key);
+  const weakAxes = weak.map((w) => ({ key: w.key, level: w.level, icon: STATUS_ICONS[w.key] }));
   const balanceMeasured =
     state.statuses.LEARNING.measured && state.statuses.EXECUTION.measured;
 
@@ -53,6 +62,7 @@ export function StatusTab({ data }: StatusTabProps) {
         debuffs={state.debuffs}
         streak={state.streak}
         phase={state.phase}
+        weakAxes={weakAxes}
       />
 
       <StatusRadar
@@ -61,9 +71,7 @@ export function StatusTab({ data }: StatusTabProps) {
         centerSlot={<SkillEmblem skillLevel={calibrating ? null : skill.level} />}
       />
 
-      <UniqueSkillPanel skill={skill} totalLevel={totalLevel} />
-
-      <StatusList items={state.statuses} />
+      <StatusList items={state.statuses} weakKeys={weakKeys} />
 
       {/*
         歪みメーターは LEARNING / EXECUTION が両方とも測定済みのときだけ出す。
@@ -72,8 +80,24 @@ export function StatusTab({ data }: StatusTabProps) {
         未測定の扱いに従う）。測定が済み次第そのまま表示される。
       */}
       {balanceMeasured ? (
-        <BalanceMeter learningLv={levels.LEARNING} executionLv={levels.EXECUTION} />
+        <BalanceMeter
+          learningLv={levels.LEARNING}
+          executionLv={levels.EXECUTION}
+          gapThreeMonthsAgo={
+            levelFromExp(state.statuses.LEARNING.expThreeMonthsAgo) -
+            levelFromExp(state.statuses.EXECUTION.expThreeMonthsAgo)
+          }
+        />
       ) : null}
+
+      {/*
+        固有スキルパネルは一覧・歪みメーターの後ろに置く。
+        派生の解放条件は「TECH Lv7 + INT Lv5」のようにステータスの閾値で書かれており、
+        一覧（TECH は Lv4）を読まないと評価できない。条件を先に見せると4件分の条件を
+        覚えたままスクロールさせることになるため、全体 → 内訳 → 解釈 → 次の一手 の順にする。
+        （07_unique_skill.md の「紋章の直下にパネル」という記述は docs 側で追随が必要）
+      */}
+      <UniqueSkillPanel skill={skill} totalLevel={totalLevel} />
     </div>
   );
 }

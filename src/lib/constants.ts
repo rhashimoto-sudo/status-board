@@ -11,6 +11,8 @@ export const MAX_LEVEL = 10;
 
 // ── TOTAL Lv（04_exp_rules.md §5）
 export const TOTAL_TOP_N = 5;
+/** ヒーローと一覧で「最も薄い軸」として強調する本数（CLAUDE.md の弱点可視化）。 */
+export const WEAK_AXIS_COUNT = 2;
 export const TOTAL_WEIGHT_TOP = 0.6;
 export const TOTAL_WEIGHT_ALL = 0.4;
 
@@ -83,6 +85,12 @@ export const BALANCE_MESSAGES = {
   learningHeavy:  "知識が実行を追い越しています。手を動かす量を増やしましょう",
   executionHeavy: "手は動いていますが新しい学びが不足しています",
   balanced:       "学習と実行のバランスが取れています",
+} as const;
+/** 乖離の趨勢（3ヶ月前との比較）。差そのものではなく「縮まっているか」を伝える。 */
+export const BALANCE_TREND_MESSAGES = {
+  narrowing: "縮小中",
+  widening:  "拡大中",
+  flat:      "横ばい",
 } as const;
 
 // ── 成長推移

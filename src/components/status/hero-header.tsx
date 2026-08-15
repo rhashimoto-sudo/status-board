@@ -7,6 +7,8 @@ import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatValue } from "@/components/ui/stat-value";
 import { HpBar } from "@/components/status/hp-bar";
 
+export type WeakAxis = { key: string; level: number; icon: string };
+
 type HeroHeaderProps = {
   /** 全軸の測定が完了するまで null（未測定）。docs/03_status_system.md:189,193-194。 */
   totalLevel: number | null;
@@ -15,13 +17,23 @@ type HeroHeaderProps = {
   debuffs: readonly Debuff[];
   streak: number;
   phase: Phase;
+  /** 最も Lv が低い軸（弱点の可視化）。未測定などで判定できないときは空配列。 */
+  weakAxes?: readonly WeakAxis[];
 };
 
 /**
  * ヒーローヘッダー（09_dashboard_spec.md §2.1）。
  * TOTAL Lv / 総合称号 / 次Lvまでの EXPバー / 🔥ストリーク / ♥HPバー / 🔻デバフ を描画する。
  */
-export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, phase }: HeroHeaderProps) {
+export function HeroHeader({
+  totalLevel,
+  totalTitle,
+  hpState,
+  debuffs,
+  streak,
+  phase,
+  weakAxes = [],
+}: HeroHeaderProps) {
   const strongest = strongestDebuff(debuffs);
   const showDebuffs = phase !== "calibration" && debuffs.length > 0;
 
@@ -37,13 +49,25 @@ export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, p
         </div>
 
         {totalLevel !== null && (
-          <div className="flex items-center gap-2">
-            <ProgressBar
-              value={totalLevelProgress(totalLevel) * 100}
-              max={100}
-              colorToken="cyan"
-              label="次のLvまでの進捗"
-            />
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <ProgressBar
+                value={totalLevelProgress(totalLevel) * 100}
+                max={100}
+                colorToken="cyan"
+                label="次のLvまでの進捗"
+              />
+            </div>
+            {/*
+              バーが何を表しているかを明示する（09_dashboard_spec.md §2.1 の「次のLvまで」）。
+              TOTAL Lv は9軸の加重平均であって単一の累積EXPを持たないため、
+              仕様の ASCII 例にある "461 EXP" のような EXP 残量は表示できない。
+              小数部の残り（次の整数 Lv までの距離）を等幅で出す。
+            */}
+            <span className="whitespace-nowrap text-[12px] text-[color:var(--color-text-secondary)]">
+              次の Lv まで{" "}
+              <StatValue>{(1 - totalLevelProgress(totalLevel)).toFixed(1)}</StatValue>
+            </span>
           </div>
         )}
 
@@ -60,6 +84,24 @@ export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, p
         </div>
 
         <HpBar hp={hpState.current} zone={hpState.zone} phase={phase} />
+
+        {/*
+          最も薄い軸を1行で出す（CLAUDE.md「弱い領域が得意領域の陰に隠れて放置される」への対処）。
+          一覧の該当行にも同じ violet の縦罫が立つので、ここで名前を見てから一覧で場所が分かる。
+        */}
+        {weakAxes.length > 0 && (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 text-[13px]">
+            <span className="text-[color:var(--color-text-secondary)]">最も薄い軸</span>
+            {weakAxes.map((axis) => (
+              <span key={axis.key} className="text-[color:var(--color-accent-violet)]">
+                <span aria-hidden="true" className="[filter:saturate(0.35)]">
+                  {axis.icon}
+                </span>{" "}
+                {axis.key} Lv <StatValue>{axis.level}</StatValue>
+              </span>
+            ))}
+          </div>
+        )}
 
         {showDebuffs && (
           <div className="flex flex-col gap-1">

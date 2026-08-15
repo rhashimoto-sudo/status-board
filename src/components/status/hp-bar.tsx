@@ -23,6 +23,13 @@ const ZONE_LABEL: Record<HpZone, string> = {
   danger: "危険",
 };
 
+// 状態ラベルの配色。文字と枠を状態色に乗せる（HP の緑/黄/赤は規約上の例外色）。
+const ZONE_LABEL_CLASS: Record<HpZone, string> = {
+  safe: "text-[color:var(--color-hp-safe)] border-[color:var(--color-hp-safe)]/40",
+  warn: "text-[color:var(--color-hp-warn)] border-[color:var(--color-hp-warn)]/40",
+  danger: "text-[color:var(--color-hp-danger)] border-[color:var(--color-hp-danger)]/40",
+};
+
 /**
  * ♥HPバー（06_penalty.md §7 / AC-14 / C-15）。
  * safe/warn/danger を緑/黄/赤に色分けし、danger のときのみ発光する（+ テキストラベル併記）。
@@ -55,7 +62,12 @@ export function HpBar({ hp, zone, phase }: HpBarProps) {
       <StatValue>
         {hp} / {HP_MAX}
       </StatValue>
-      <span className="text-[color:var(--color-text-secondary)]">{ZONE_LABEL[zone]}</span>
+      {/* 状態ラベルは状態色に乗せる（色だけに頼らずテキストも併記＝NFR-4）。発光は付けない。 */}
+      <span
+        className={`rounded-[3px] border px-1.5 py-0.5 text-[11px] tracking-[0.08em] ${ZONE_LABEL_CLASS[zone]}`}
+      >
+        {ZONE_LABEL[zone]}
+      </span>
     </div>
   );
 }

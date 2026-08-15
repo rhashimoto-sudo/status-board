@@ -2,9 +2,10 @@
 
 import { useState } from "react";
 import {
+  Area,
   CartesianGrid,
+  ComposedChart,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -77,6 +78,10 @@ type ChartRow = {
   date: string;
   dateLabel: string;
   totalLevel: number;
+  /** 乖離の帯の下端（透明）。 */
+  gapBase: number;
+  /** 乖離の帯の高さ = |LEARNING − EXECUTION|。 */
+  gapBand: number;
 } & Record<SpecialtyStatusKey | "LEARNING" | "EXECUTION", number>;
 
 function buildChartRows(history: readonly Snapshot[]): readonly ChartRow[] {
@@ -88,6 +93,10 @@ function buildChartRows(history: readonly Snapshot[]): readonly ChartRow[] {
     // 既に文字列の日付を再解釈する必要はない）。
     dateLabel: snapshot.date.slice(5).replace("-", "/"),
     totalLevel: snapshot.totalLevel,
+    // LEARNING と EXECUTION の差を「面」で描くための2値（stack して下段を透明にする）。
+    // 2本の線の隙間を目測させるのではなく、面積として乖離の大きさと趨勢を読めるようにする。
+    gapBase: Math.min(snapshot.levels.LEARNING, snapshot.levels.EXECUTION),
+    gapBand: Math.abs(snapshot.levels.LEARNING - snapshot.levels.EXECUTION),
     ...snapshot.levels,
   })) as ChartRow[];
 }
@@ -154,7 +163,7 @@ export function GrowthChart({ history }: GrowthChartProps) {
   return (
     <div className="w-full min-w-0">
       <ResponsiveContainer width="100%" height={240}>
-        <LineChart data={rows} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
+        <ComposedChart data={rows} margin={{ top: 8, right: 8, left: -16, bottom: 0 }}>
           <CartesianGrid stroke="var(--color-border-hairline)" vertical={false} />
           <XAxis
             dataKey="dateLabel"
@@ -171,6 +180,26 @@ export function GrowthChart({ history }: GrowthChartProps) {
             width={28}
           />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-border-hairline)" }} />
+          {/* 乖離の帯。下段(gapBase)は透明で位置合わせのみ、上段(gapBand)が差の大きさを表す。 */}
+          <Area
+            dataKey="gapBase"
+            stackId="gap"
+            stroke="none"
+            fill="transparent"
+            isAnimationActive={false}
+            legendType="none"
+            tooltipType="none"
+          />
+          <Area
+            dataKey="gapBand"
+            stackId="gap"
+            stroke="none"
+            fill="var(--color-accent-violet)"
+            fillOpacity={0.1}
+            isAnimationActive={false}
+            legendType="none"
+            tooltipType="none"
+          />
           {BASE_SERIES.map((series) => (
             <Line
               key={series.key}
@@ -198,7 +227,7 @@ export function GrowthChart({ history }: GrowthChartProps) {
               />
             );
           })}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
 
       {/* 凡例: 既定3系列（クリック不可・常時表示）+ 専門7系列（クリックで表示切替）。

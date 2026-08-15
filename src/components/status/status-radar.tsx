@@ -14,19 +14,6 @@ import { STATUS_ORDER } from "@/lib/constants";
 import type { StatusKey } from "@/lib/types";
 import type { BaseTickContentProps } from "recharts";
 
-// ── 軸ラベル用の絵文字（このコンポーネントの表示専用。調整値ではないためここに閉じる） ──
-const STATUS_EMOJI: Readonly<Record<StatusKey, string>> = {
-  INT: "🧠",
-  TECH: "💻",
-  DATA: "📊",
-  MARKETING: "📣",
-  PM: "👑",
-  BRIDGE: "🤝",
-  ENGLISH: "🌎",
-  LEARNING: "🔥",
-  EXECUTION: "⚔️",
-};
-
 const RADAR_MAX = 10;
 const UNMEASURED_LABEL = "???";
 
@@ -70,7 +57,10 @@ function buildChartRows(
     const point = byKey.get(key);
     return {
       key,
-      label: measured ? `${STATUS_EMOJI[key]} ${key}` : UNMEASURED_LABEL,
+      // 軸ラベルに絵文字を載せない。OS 絵文字は実質9色を持ち込み、特に 📊 の赤緑と
+      // 🔥 の橙が HP 警告色と同じ色域に入るため「アクセント2色 + 状態色のみ」の規約を崩す。
+      // 11px では形も潰れて判別できない。一覧側では彩度を落として併用している。
+      label: measured ? key : UNMEASURED_LABEL,
       // 未測定の軸は current/ghost とも値を出さない（多角形の頂点は中心に落ちるが、9軸の形は保たれる）。
       // ghost を測定済みでガードしないと、未測定軸でも3ヶ月前の値がチャートから読み取れてしまう（A-1）。
       current: measured ? (point?.current ?? 0) : 0,

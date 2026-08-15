@@ -7,6 +7,7 @@ import {
   levelProgress,
   levelsOf,
   totalLevelProgress,
+  weakestStatuses,
 } from "@/lib/level";
 import { STATUS_ORDER } from "@/lib/constants";
 import type { Status, StatusKey, StatusMap } from "@/lib/types";
@@ -190,5 +191,37 @@ describe("totalLevelProgress", () => {
     expect(totalLevelProgress(4.2)).toBeCloseTo(0.2);
     expect(totalLevelProgress(5.0)).toBe(0);
     expect(totalLevelProgress(10.0)).toBe(0);
+  });
+});
+
+describe("weakestStatuses", () => {
+  const mk = (levels: Partial<Record<StatusKey, number>>, measured = true): StatusMap => {
+    const out = {} as Record<StatusKey, { key: StatusKey; exp: number; measured: boolean; expThreeMonthsAgo: number }>;
+    for (const key of STATUS_ORDER) {
+      const lv = levels[key] ?? 1;
+      out[key] = { key, exp: levelFloorExp(lv), measured, expThreeMonthsAgo: 0 };
+    }
+    return out as StatusMap;
+  };
+
+  it("最も Lv の低い2軸を返す", () => {
+    const s = mk({ INT: 5, TECH: 4, DATA: 5, MARKETING: 3, PM: 3, BRIDGE: 2, ENGLISH: 2, LEARNING: 4, EXECUTION: 3 });
+    expect(weakestStatuses(s).map((w) => w.key)).toEqual(["BRIDGE", "ENGLISH"]);
+  });
+
+  it("同値のときは STATUS_ORDER 順で決定的に選ぶ", () => {
+    const s = mk({}); // 全て Lv1
+    expect(weakestStatuses(s).map((w) => w.key)).toEqual([STATUS_ORDER[0], STATUS_ORDER[1]]);
+  });
+
+  it("未測定の軸は対象から外す", () => {
+    const s = mk({ INT: 5, TECH: 4, DATA: 5, MARKETING: 3, PM: 3, BRIDGE: 2, ENGLISH: 2, LEARNING: 4, EXECUTION: 3 });
+    const partial = { ...s, BRIDGE: { ...s.BRIDGE, measured: false } } as StatusMap;
+    expect(weakestStatuses(partial).map((w) => w.key)).not.toContain("BRIDGE");
+  });
+
+  it("count で本数を変えられる", () => {
+    const s = mk({ INT: 5, TECH: 4, DATA: 5, MARKETING: 3, PM: 3, BRIDGE: 2, ENGLISH: 2, LEARNING: 4, EXECUTION: 3 });
+    expect(weakestStatuses(s, 3)).toHaveLength(3);
   });
 });

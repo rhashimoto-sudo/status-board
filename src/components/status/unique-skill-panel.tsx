@@ -67,47 +67,68 @@ export function UniqueSkillPanel({ skill, totalLevel }: UniqueSkillPanelProps) {
         </div>
       </div>
 
-      <div className="mt-4">
-        <div className="text-[13px] font-semibold text-[color:var(--color-text-secondary)]">派生</div>
+      {/*
+        未解放の派生は既定で畳む。375px では解放条件（「TECH Lv7 + INT Lv5（現 TECH Lv4 / INT Lv5）」）
+        が折り返してインデントが崩れ、常時4件分を読ませることになるため。
+        <details> なのでライブラリ不要・キーボード操作可・色も増えない。
+        解放済みは畳まず常に見える位置に置く。
+      */}
+      <details className="mt-4 group">
+        <summary className="focus-ring cursor-pointer list-none text-[13px] font-semibold text-[color:var(--color-text-secondary)]">
+          派生{" "}
+          <StatValue className="text-[color:var(--color-text-primary)]">
+            {unlockedCount}
+          </StatValue>
+          /<StatValue>{skill.derivations.length}</StatValue>
+          <span aria-hidden="true" className="ml-1 inline-block group-open:hidden">
+            ▸
+          </span>
+          <span aria-hidden="true" className="ml-1 hidden group-open:inline-block">
+            ▾
+          </span>
+        </summary>
         <ul className="mt-2 space-y-2">
           {skill.derivations.map((derivation) => (
             <li
               key={derivation.id}
-              className={`flex flex-wrap items-baseline gap-x-2 gap-y-0.5 text-[14px] ${
+              className={`grid grid-cols-[16px_1fr] gap-x-2 text-[14px] ${
                 derivation.unlocked
                   ? "text-[color:var(--color-text-primary)]"
                   : "text-[color:var(--color-text-muted)]"
               }`}
             >
               <span aria-hidden="true">{derivation.unlocked ? "✓" : "・"}</span>
-              <span>{derivation.name}</span>
-              <span className="text-[13px]">
-                {derivation.requirements.map((requirement, index) => (
-                  <span key={requirement.key}>
-                    {index > 0 ? " + " : ""}
-                    {requirement.key} Lv
-                    <StatValue>{requirement.required}</StatValue>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-baseline gap-x-2">
+                  <span>{derivation.name}</span>
+                  <span className="text-[13px]">
+                    {derivation.requirements.map((requirement, index) => (
+                      <span key={requirement.key}>
+                        {index > 0 ? " + " : ""}
+                        {requirement.key} Lv
+                        <StatValue>{requirement.required}</StatValue>
+                      </span>
+                    ))}
                   </span>
-                ))}
-              </span>
-              {derivation.unlocked ? (
-                <span className="text-[13px] text-[color:var(--color-accent-cyan)]">{DERIVATION_BONUS_LABEL}</span>
-              ) : (
-                <span className="text-[13px]">
-                  (現{" "}
-                  {derivation.requirements
-                    .map(
-                      (requirement) =>
-                        `${requirement.key} Lv${requirement.current}`,
-                    )
-                    .join(" / ")}
-                  )
-                </span>
-              )}
+                  {derivation.unlocked && (
+                    <span className="text-[13px] text-[color:var(--color-accent-cyan)]">
+                      {DERIVATION_BONUS_LABEL}
+                    </span>
+                  )}
+                </div>
+                {!derivation.unlocked && (
+                  <div className="mt-0.5 text-[12px]">
+                    現{" "}
+                    {derivation.requirements
+                      .map((requirement) => `${requirement.key} Lv${requirement.current}`)
+                      .join(" / ")}
+                  </div>
+                )}
+              </div>
             </li>
           ))}
         </ul>
-      </div>
+      </details>
 
       <div className="mt-4 border-t border-[color:var(--color-border-hairline)] pt-3 text-[13px] text-[color:var(--color-text-secondary)]">
         {finalClassReached ? (
