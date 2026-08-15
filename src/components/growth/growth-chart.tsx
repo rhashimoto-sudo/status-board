@@ -10,12 +10,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SPECIALTY_ORDER } from "@/lib/constants";
-import type { Snapshot, SpecialtyStatusKey } from "@/lib/types";
+import { FOUNDATION_ORDER, MAX_LEVEL, SPECIALTY_ORDER } from "@/lib/constants";
+import type { Snapshot, SpecialtyStatusKey, StatusKey } from "@/lib/types";
 
-// STATUS_ORDER の先頭7件のスライスである SPECIALTY_ORDER は型上 StatusKey[] のままのため、
-// 専門7つに絞ってから SpecialtyStatusKey[] として扱う（constants.ts 自体は変更しない）。
-const SPECIALTIES: readonly SpecialtyStatusKey[] = SPECIALTY_ORDER as readonly SpecialtyStatusKey[];
+// SPECIALTY_ORDER は `STATUS_ORDER.slice(0, 7)` で型上 StatusKey[] のままのため、
+// 無検査アサーションで SpecialtyStatusKey[] とみなさない。FOUNDATION_ORDER
+// （LEARNING/EXECUTION）を実行時に除外する型ガードで絞り込むことで、
+// STATUS_ORDER の並びが将来変わって先頭7つに土台2つが混入しても
+// LEARNING/EXECUTION が専門系列として二重に描画されない（constants.ts は変更しない）。
+function isSpecialtyKey(key: StatusKey): key is SpecialtyStatusKey {
+  return !(FOUNDATION_ORDER as readonly StatusKey[]).includes(key);
+}
+const SPECIALTIES: readonly SpecialtyStatusKey[] = SPECIALTY_ORDER.filter(isSpecialtyKey);
 
 // ── 表示専用の絵文字（このコンポーネントに閉じる。status-radar.tsx と同じ方針）
 const SPECIALTY_EMOJI: Readonly<Record<SpecialtyStatusKey, string>> = {
@@ -27,8 +33,6 @@ const SPECIALTY_EMOJI: Readonly<Record<SpecialtyStatusKey, string>> = {
   BRIDGE: "🤝",
   ENGLISH: "🌎",
 };
-
-const Y_AXIS_MAX = 10; // Lv は 1〜10 固定（constants.ts の MAX_LEVEL と一致させる意図の表示専用値）
 
 type BaseSeriesKey = "totalLevel" | "LEARNING" | "EXECUTION";
 
@@ -47,14 +51,25 @@ const BASE_SERIES: readonly BaseSeriesDef[] = [
   {
     key: "EXECUTION",
     label: "⚔️ EXECUTION",
-    stroke: "color-mix(in srgb, var(--color-accent-cyan) 60%, white)",
+    // 11_design_system.md §3.1: EXECUTION は「Cyan 低彩度」指定（globals.css の @theme 参照）。
+    // white を混ぜると明度が上がり TOTAL より明るく主役級に見えてしまうため、
+    // globals.css の @theme に定義した専用トークンを使う（新しい色相は追加しない）。
+    stroke: "var(--color-accent-cyan-soft)",
   },
 ];
 
 // 専門7つはシアン〜バイオレット間の同一色相帯の明度違いで生成する（赤・緑・黄は使わない）。
-// 等間隔の8分割点のうち両端（0%・100% = 既定2系列と同じ色）を避けた内側7点を採る。
+// 8分割の内側7点（12.5%〜87.5%）では両端（TOTAL=Cyan 0%・LEARNING=Violet 100%）との
+// 差がわずか12.5ポイントしかなく、隣接する専門系列(INT/ENGLISH)が既定系列と実測でほぼ
+// 同色になっていた。25%〜75%の帯に7点を均等配置することで、両端との距離を25ポイント
+// まで広げ、隣接専門系列どうしの間隔も (75-25)/6 ≈ 8.33ポイントを確保する。
 function specialtyColor(index: number): string {
-  const ratio = ((index + 1) / (SPECIALTIES.length + 1)) * 100;
+  const bandMin = 25;
+  const bandMax = 75;
+  const ratio =
+    SPECIALTIES.length <= 1
+      ? (bandMin + bandMax) / 2
+      : bandMin + (index / (SPECIALTIES.length - 1)) * (bandMax - bandMin);
   return `color-mix(in srgb, var(--color-accent-violet) ${ratio}%, var(--color-accent-cyan) ${100 - ratio}%)`;
 }
 
@@ -149,7 +164,7 @@ export function GrowthChart({ history }: GrowthChartProps) {
             tickLine={false}
           />
           <YAxis
-            domain={[0, Y_AXIS_MAX]}
+            domain={[0, MAX_LEVEL]}
             tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
             axisLine={{ stroke: "var(--color-border-hairline)" }}
             tickLine={false}

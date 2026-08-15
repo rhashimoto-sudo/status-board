@@ -1,5 +1,5 @@
 import { weekdayIndexInTimeZone } from "@/lib/datetime";
-import { DISPLAY_TIME_ZONE, HEATMAP_INTENSITY_STEPS } from "@/lib/constants";
+import { HEATMAP_INTENSITY_STEPS } from "@/lib/constants";
 
 const CELL_SIZE = 11;
 const CELL_GAP = 3;
@@ -16,10 +16,11 @@ type HeatmapCell = HeatmapDay | null;
 function buildWeekColumns(days: readonly HeatmapDay[]): readonly HeatmapCell[][] {
   if (days.length === 0) return [];
 
-  // date は "YYYY-MM-DD"（DISPLAY_TIME_ZONE 基準で確定済み）。ランタイムTZ依存の
-  // `new Date(iso).getDay()` は使わず、datetime.ts の `weekdayIndexInTimeZone` を
-  // 明示的に DISPLAY_TIME_ZONE で評価することで Vercel(UTC)/ローカル(JST) の差異を避ける。
-  const leadingPad = weekdayIndexInTimeZone(new Date(`${days[0]!.date}T00:00:00Z`), DISPLAY_TIME_ZONE);
+  // date は "YYYY-MM-DD"（DISPLAY_TIME_ZONE 基準で既に確定済みの日付文字列）。この文字列に
+  // もう解決すべきタイムゾーン情報は無いため、`T00:00:00Z` として組み立てた Date は
+  // 常に "UTC" で再評価する（datetime.ts のドキュメントコメント参照）。DISPLAY_TIME_ZONE
+  // を渡すと、負のオフセットのタイムゾーンでは全セルが1行ずれてグリッドが崩れる。
+  const leadingPad = weekdayIndexInTimeZone(new Date(`${days[0]!.date}T00:00:00Z`), "UTC");
   const cells: HeatmapCell[] = [...Array(leadingPad).fill(null), ...days];
   const trailingPad = (WEEKDAYS_PER_WEEK - (cells.length % WEEKDAYS_PER_WEEK)) % WEEKDAYS_PER_WEEK;
   for (let i = 0; i < trailingPad; i += 1) cells.push(null);
@@ -56,11 +57,16 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
 
   return (
     <div className="w-full min-w-0">
+      {/* `role="img"` を svg 直下に置くと配下がアクセシビリティツリーから刈られ、
+          各セルの <title>（日付+EXP）がスクリーンリーダーに一切届かなくなる（09_dashboard_spec.md
+          §4.2）。svg 自体は概要のみを述べる role="group" とし、各セルに role="img" + 個別の
+          aria-label を付けることで、セルごとの情報がアクセシビリティツリーに露出するようにする。
+          <title> はポインタ操作時のネイティブツールチップ用に残す。 */}
       <svg
         viewBox={`0 0 ${Math.max(svgWidth, CELL_STEP)} ${svgHeight}`}
         width="100%"
         style={{ display: "block" }}
-        role="img"
+        role="group"
         aria-label={`直近${days.length}日の活動ヒートマップ`}
       >
         {columns.map((column, columnIndex) => (
@@ -78,6 +84,8 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
                   fillOpacity={intensityToOpacity(cell.intensity)}
                   stroke="var(--color-border-hairline)"
                   strokeWidth={1}
+                  role="img"
+                  aria-label={`${cell.date} 獲得EXP ${cell.gainedExp}`}
                 >
                   <title>{`${cell.date} 獲得EXP ${cell.gainedExp}`}</title>
                 </rect>
@@ -88,7 +96,11 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
       </svg>
 
       {/* 濃淡だけに頼らないための凡例（色 + テキスト）。5項目程度の固定幅チップのみで
-          375pxでも折り返す必要がないくらい短いが、念のため flex-wrap にしておく。 */}
+          375pxでも折り返す必要がないくらい短いが、念のため flex-wrap にしておく。
+          セル側は fill だけを fillOpacity で薄くし枠線（stroke）は不透明のままなのに対し、
+          凡例チップが要素全体の opacity を使っていると枠線ごと薄まり、最小段階（0.06）が
+          背景に対してほぼ不可視になっていた。チップも背景色だけを color-mix の透明度で
+          薄くし、枠線は border の不透明色のまま維持することで、セルと同じ見え方に揃える。 */}
       <ul className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[color:var(--color-text-secondary)]">
         <li>少ない</li>
         {Array.from({ length: HEATMAP_INTENSITY_STEPS }, (_, step) => (
@@ -96,8 +108,7 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
             <span
               className="inline-block h-3 w-3 rounded-[2px] border border-[color:var(--color-border-hairline)]"
               style={{
-                backgroundColor: "var(--color-accent-cyan)",
-                opacity: intensityToOpacity(step),
+                backgroundColor: `color-mix(in srgb, var(--color-accent-cyan) ${intensityToOpacity(step) * 100}%, transparent)`,
               }}
             />
           </li>
