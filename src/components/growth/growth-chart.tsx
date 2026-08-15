@@ -34,8 +34,6 @@ const SPECIALTY_EMOJI: Readonly<Record<SpecialtyStatusKey, string>> = {
   ENGLISH: "🌎",
 };
 
-const Y_AXIS_MAX = 10; // Lv は 1〜10 固定（constants.ts の MAX_LEVEL と一致させる意図の表示専用値）
-
 type BaseSeriesKey = "totalLevel" | "LEARNING" | "EXECUTION";
 
 type BaseSeriesDef = {
@@ -155,7 +153,7 @@ export function GrowthChart({ history }: GrowthChartProps) {
             tickLine={false}
           />
           <YAxis
-            domain={[0, Y_AXIS_MAX]}
+            domain={[0, MAX_LEVEL]}
             tick={{ fill: "var(--color-text-secondary)", fontSize: 11 }}
             axisLine={{ stroke: "var(--color-border-hairline)" }}
             tickLine={false}
