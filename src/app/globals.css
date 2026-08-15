@@ -30,6 +30,14 @@
   --color-debuff: #8b5cf6;
   --color-ghost: rgba(139, 92, 246, 0.25);
 
+  /* ── 背景意匠（system window 風。docs/11_design_system.md 追記分） ──
+     すべて既存アクセント（シアン/バイオレット）と背景トーンの低不透明度のみで構成し、
+     発光（グロー）はカウントダウンとHP危険域の専用スタイルのみに限定し、ここでは使わない。 */
+  --color-bg-grid-line: rgba(34, 211, 238, 0.05);
+  --color-bg-vignette: rgba(5, 6, 10, 0.6);
+  --color-bg-edge-cyan: rgba(34, 211, 238, 0.18);
+  --color-bg-edge-violet: rgba(139, 92, 246, 0.14);
+
   /* ── タイポグラフィ ── */
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
@@ -45,6 +53,69 @@
 body {
   background-color: var(--color-bg);
   color: var(--color-text-primary);
+  min-height: 100vh;
+  position: relative;
+  /* ── system window 風の背景（docs/11_design_system.md 追記分） ──
+     1) 微細なグリッド（罫線ベースの構造表現を背景にも延長）
+     2) ビネット（四隅をわずかに沈め、中央のパネルに視線を集める）
+     3) ノイズ（feTurbulence の SVG data URI。alpha 0.03 を直接焼き込み。
+        CSS変数化はSVG文字列がリテラルのため不可。パネルは不透明な
+        Surface 背景で覆われるため、テキスト上には重ならない） */
+  background-image:
+    linear-gradient(var(--color-bg-grid-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--color-bg-grid-line) 1px, transparent 1px),
+    radial-gradient(ellipse at center, transparent 55%, var(--color-bg-vignette) 100%),
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='matrix' values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0 0 0 0.03 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-size: 48px 48px, 48px 48px, 100% 100%, 220px 220px;
+  background-attachment: fixed;
+}
+
+/* ── system window の縁の光（グロー用スタイルを使わずグラデーションのみで表現） ──
+   fixed + inset:0 の疑似要素のためドキュメント幅を広げず、375px の横スクロールに影響しない。
+   z-index: -1 で常に本文の背後に固定し、テキストのコントラストに影響させない。 */
+body::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-edge-cyan),
+    transparent 8%,
+    transparent 92%,
+    var(--color-bg-edge-violet)
+  );
+}
+
+/* ── 微細なスキャンライン（近未来感の補強。低不透明度・低コントラストで本文を邪魔しない） ── */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0.25;
+  background: linear-gradient(180deg, transparent 0%, var(--color-bg-grid-line) 50%, transparent 100%);
+  background-size: 100% 200px;
+  animation: bg-scanline 14s linear infinite;
+}
+
+@keyframes bg-scanline {
+  0% {
+    background-position: 0 -200px;
+  }
+  100% {
+    background-position: 0 100vh;
+  }
+}
+
+/* prefers-reduced-motion: スキャンラインのアニメーションを止め、視覚的なノイズも消す */
+@media (prefers-reduced-motion: reduce) {
+  body::after {
+    animation: none;
+    opacity: 0;
+  }
 }
 
 /* ── フォーカスリング（NFR-4）: outline: none の単独指定は禁止し、必ずこのユーティリティを使う ── */
