@@ -151,30 +151,25 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
             <Radar
               name="3ヶ月前"
               dataKey="ghost"
-              stroke="var(--color-ghost)"
-              strokeDasharray="4 3"
+              stroke="var(--color-ghost-stroke)"
+              strokeWidth={1.5}
+              strokeDasharray="5 4"
               fill="var(--color-accent-violet)"
-              fillOpacity={0.1}
+              fillOpacity={0.08}
               isAnimationActive={false}
             />
             <Radar
               name="現在"
               dataKey="current"
               stroke="var(--color-accent-cyan)"
+              strokeWidth={2}
               fill="var(--color-accent-cyan)"
-              fillOpacity={0.25}
+              fillOpacity={0.22}
+              dot={{ r: 2.5, fill: "var(--color-accent-cyan)" }}
               isAnimationActive={false}
             />
           </RadarChart>
         </ResponsiveContainer>
-        {centerSlot && (
-          <div
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-            aria-hidden={false}
-          >
-            {centerSlot}
-          </div>
-        )}
       </div>
       <ul className="mt-2 flex flex-wrap justify-center gap-4 text-[13px] text-[color:var(--color-text-secondary)]">
         <li className="flex items-center gap-2">
@@ -186,15 +181,15 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
           現在
         </li>
         <li className="flex items-center gap-2">
-          {/* 凡例スウォッチは系列と同じ破線色（stroke: var(--color-ghost)）・
-              塗り不透明度 0.1（fillOpacity と同じ）に一致させる（B-3）。 */}
+          {/* 凡例スウォッチは系列と同じ破線色（stroke: var(--color-ghost-stroke)）・
+              塗り不透明度 0.08（fillOpacity と同じ）に一致させる（B-3）。 */}
           <span
             aria-hidden
             className="inline-block h-2 w-2 rounded-full border border-dashed"
             style={{
-              borderColor: "var(--color-ghost)",
+              borderColor: "var(--color-ghost-stroke)",
               backgroundColor:
-                "color-mix(in srgb, var(--color-accent-violet) 10%, transparent)",
+                "color-mix(in srgb, var(--color-accent-violet) 8%, transparent)",
             }}
           />
           3ヶ月前

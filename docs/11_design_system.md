@@ -44,7 +44,8 @@
 | HP Warn | Amber | `#f59e0b` | HP **41〜70** |
 | HP Danger | Red | `#ef4444` | HP **0〜40**・期限切迫。**発光あり** |
 | Debuff | Violet | `#8b5cf6` | デバフバッジ |
-| Ghost | — | `rgba(139,92,246,0.25)` | レーダーの3ヶ月前ゴースト |
+| Ghost Fill | — | `rgba(139,92,246,0.25)` | レーダーの3ヶ月前ゴーストの塗り（`fillOpacity` と併用するためベース値としては0.25を保持。実際の塗りは `fillOpacity=0.08` で更に薄くする） |
+| Ghost Stroke | — | `rgba(139,92,246,0.6)` | レーダーの3ヶ月前ゴーストの**線**専用。深藍黒の背景・グリッド線（白 0.08）に対して破線が実際に視認できる不透明度まで塗りより引き上げている（Issue #radar-visibility B） |
 
 > **ルール**: 上記以外の色を追加しない。新しい意味を表現したくなったら、
 > **まず罫線・余白・タイポグラフィで解決できないかを検討する**（AC-12 の検証対象）。
@@ -296,6 +297,21 @@ AC-14（`grep -rn "box-shadow" src/` の出現箇所がカウントダウンと 
 
 `MAX_GLOW_OPACITY` を上げるほど手順1の合成が明るくなり背景輝度が上がって比率が下がるため、
 0.22 を上限として維持すること。
+
+### ゴースト系列（`src/components/status/status-radar.tsx`）（Issue #radar-visibility B）
+
+ゴースト（3ヶ月前）の破線が深藍黒の背景・グリッド線（白 0.08）とほぼ同明度で視認できなかった
+問題を、線用トークン `--color-ghost-stroke`（`rgba(139,92,246,0.6)`）を新設して是正した。
+
+| 系列 | stroke | strokeWidth | strokeDasharray | fill | fillOpacity | dot |
+|---|---|---|---|---|---|---|
+| 3ヶ月前（ゴースト） | `var(--color-ghost-stroke)`（`rgba(139,92,246,0.6)`） | 1.5 | `5 4` | `var(--color-accent-violet)` | 0.08 | なし |
+| 現在 | `var(--color-accent-cyan)` | 2 | なし | `var(--color-accent-cyan)` | 0.22 | `{ r: 2.5, fill: var(--color-accent-cyan) }` |
+
+役割分担は「線の太さ（2 vs 1.5）で主従」「不透明度（stroke 0.6 vs 塗りの0.25という
+既存の Ghost Fill トークンより線を濃くする、かつ fillOpacity 0.22 vs 0.08）で時間軸」を表現する。
+`dot` は現在値系列にのみ付け、色を増やさずシアンのみを使う。凡例スウォッチも同じ
+`--color-ghost-stroke` / `fillOpacity 0.08` 相当に合わせて更新した。
 
 ---
 
