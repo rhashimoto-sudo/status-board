@@ -38,6 +38,11 @@
   --color-bg-edge-cyan: rgba(34, 211, 238, 0.18);
   --color-bg-edge-violet: rgba(139, 92, 246, 0.14);
 
+  /* ── パネル質感（Issue #panel-skin 追記分） ──
+     シアンの色相のみを低不透明度で使い、新しい色相は追加しない。 */
+  --color-panel-top-glow: rgba(34, 211, 238, 0.045);
+  --color-panel-edge-top: rgba(34, 211, 238, 0.22);
+
   /* ── タイポグラフィ ── */
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 
@@ -116,6 +121,28 @@ body::after {
     animation: none;
     opacity: 0;
   }
+}
+
+/* ── パネル面（system window 風。Issue #panel-skin 追記分） ──
+   上辺だけシアンの光を受ける二重グラデーション。発光用プロパティは使わず
+   background と border-color のみで質感を出す（AC-14 を維持）。 */
+.panel-surface {
+  background:
+    linear-gradient(180deg, var(--color-panel-top-glow) 0%, transparent 42%),
+    linear-gradient(160deg, var(--color-surface-raised) 0%, var(--color-surface) 55%, var(--color-bg) 100%);
+  border: 1px solid var(--color-border-hairline);
+  border-top-color: var(--color-panel-edge-top);
+}
+
+/* ── パネル見出しの区切り線（左だけシアン）。Issue #panel-skin 追記分 ── */
+.panel-heading-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    var(--color-border-bracket) 0%,
+    var(--color-border-hairline) 28%,
+    transparent 100%
+  );
 }
 
 /* ── フォーカスリング（NFR-4）: outline: none の単独指定は禁止し、必ずこのユーティリティを使う ── */
