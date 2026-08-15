@@ -32,15 +32,25 @@ export function Panel({ heading, children, className }: PanelProps) {
 type BracketPosition = "top-left" | "top-right" | "bottom-left" | "bottom-right";
 
 function PanelBracket({ position }: { position: BracketPosition }) {
-  const size = "w-3 h-3";
+  const size = "w-4 h-4";
   const base = "pointer-events-none absolute border-[color:var(--color-border-bracket)]";
 
   const positionClasses: Record<BracketPosition, string> = {
-    "top-left": "top-0 left-0 border-t-2 border-l-2",
-    "top-right": "top-0 right-0 border-t-2 border-r-2",
-    "bottom-left": "bottom-0 left-0 border-b-2 border-l-2",
-    "bottom-right": "bottom-0 right-0 border-b-2 border-r-2",
+    "top-left": "top-0 left-0 border-t-[1.5px] border-l-[1.5px]",
+    "top-right": "top-0 right-0 border-t-[1.5px] border-r-[1.5px]",
+    "bottom-left": "bottom-0 left-0 border-b-[1.5px] border-l-[1.5px]",
+    "bottom-right": "bottom-0 right-0 border-b-[1.5px] border-r-[1.5px]",
   };
 
-  return <span className={`${base} ${size} ${positionClasses[position]}`} />;
+  return (
+    <>
+      <span className={`${base} ${size} ${positionClasses[position]}`} />
+      {position === "top-left" && (
+        <span className="pointer-events-none absolute top-0 left-4 h-px w-6 bg-gradient-to-r from-[color:var(--color-border-bracket)] to-transparent" />
+      )}
+      {position === "top-right" && (
+        <span className="pointer-events-none absolute top-0 right-4 h-px w-6 bg-gradient-to-l from-[color:var(--color-border-bracket)] to-transparent" />
+      )}
+    </>
+  );
 }
