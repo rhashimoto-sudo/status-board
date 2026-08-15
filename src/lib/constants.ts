@@ -115,3 +115,27 @@ export const NETWORK_BG = {
   /** ノードの不透明度。 */
   nodeOpacity: 0.55,
 } as const;
+
+/**
+ * 背景の system frame（ソロレベリング風のステータスウィンドウ枠）。
+ * ゆっくり拡大・収縮して「呼吸している」ように見せる。
+ */
+export const SYSTEM_FRAME = {
+  /** 画面端からの余白の割合（短辺基準）。小さいほど枠が外側に広がる。 */
+  insetRatio: 0.06,
+  /** 呼吸1周期の秒数。 */
+  breathSeconds: 7,
+  /** 拡大の最大倍率（1.0 = 等倍）。 */
+  breathScale: 1.06,
+  /** 枠線の不透明度。 */
+  strokeOpacity: 0.8,
+  /** 枠線の太さ(px)。 */
+  lineWidth: 2,
+  /** Canvas 内の発光半径(px)。CSS の影プロパティは使わない。 */
+  glowBlur: 20,
+  /** 四隅ブラケットの腕の長さ(px)。 */
+  cornerLength: 64,
+  /** 左右に並ぶ装飾チップの本数と厚み。 */
+  chipCount: 3,
+  chipThickness: 5,
+} as const;

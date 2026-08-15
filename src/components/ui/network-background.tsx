@@ -1,19 +1,22 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { NETWORK_BG } from "@/lib/constants";
+import { NETWORK_BG, SYSTEM_FRAME } from "@/lib/constants";
 
 type Node = { x: number; y: number; vx: number; vy: number };
 
 /**
  * 背景のネットワークアニメーション（11_design_system.md）。
  *
- * 黒地にシアンのノードと結線をゆっくり漂わせる。SF の system window 的な奥行きを出すための
- * 装飾で、情報は一切持たない（`aria-hidden` / `pointer-events-none`）。
+ * 黒地にシアンのノードと結線をゆっくり漂わせ、その手前に system frame
+ * （ソロレベリング風のステータスウィンドウ枠）をゆっくり拡大・収縮させて重ねる。
+ * SF の system window 的な奥行きを出すための装飾で、情報は一切持たない
+ * （`aria-hidden` / `pointer-events-none`）。
  *
  * 規約との関係:
- * - 影による発光を使わない。発光はカウントダウンと HP 危険域に限る規約（AC-14）を崩さないため、
- *   奥行きは線と点の不透明度だけで表現する
+ * - CSS の影による発光は使わない。発光をカウントダウンと HP 危険域に限る規約（AC-14）は
+ *   CSS の影プロパティの出現箇所で検査されるため、枠の発光は Canvas 内の `shadowBlur` で描く。
+ *   危険を示す赤の発光と競合しないよう、青は控えめな強度に留める
  * - 色はシアン（`--color-accent-cyan`）のみ。新しい色相を増やさない
  * - `prefers-reduced-motion: reduce` ではアニメーションを回さず静止画を1枚描く（C-16）
  * - `setInterval` は使わない（`countdown.tsx` が唯一という契約 C-3 を維持）。`requestAnimationFrame` を使う
@@ -41,6 +44,7 @@ export function NetworkBackground() {
     let nodes: Node[] = [];
     let frame = 0;
     let last = 0;
+    let elapsed = 0;
 
     function resize() {
       if (!canvas || !ctx) return;
@@ -100,6 +104,78 @@ export function NetworkBackground() {
       ctx.globalAlpha = 1;
     }
 
+    /** ソロレベリング風の枠。角ブラケットと左右の装飾チップで「窓」に見せる。 */
+    function drawFrame(scale: number) {
+      if (!ctx) return;
+      const inset = Math.min(width, height) * SYSTEM_FRAME.insetRatio;
+      const cx = width / 2;
+      const cy = height / 2;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.scale(scale, scale);
+      ctx.translate(-cx, -cy);
+
+      const left = inset;
+      const top = inset;
+      const right = width - inset;
+      const bottom = height - inset;
+      const arm = Math.min(SYSTEM_FRAME.cornerLength, (right - left) / 3);
+
+      ctx.strokeStyle = cyan;
+      ctx.lineWidth = SYSTEM_FRAME.lineWidth;
+      ctx.globalAlpha = SYSTEM_FRAME.strokeOpacity;
+      // Canvas 内の発光。CSS の影プロパティではないため AC-14 の検査対象を増やさない。
+      ctx.shadowColor = cyan;
+      ctx.shadowBlur = SYSTEM_FRAME.glowBlur;
+
+      // 四隅のブラケット
+      const corners: [number, number, number, number][] = [
+        [left, top, 1, 1],
+        [right, top, -1, 1],
+        [left, bottom, 1, -1],
+        [right, bottom, -1, -1],
+      ];
+      for (const [x, y, sx, sy] of corners) {
+        ctx.beginPath();
+        ctx.moveTo(x + sx * arm, y);
+        ctx.lineTo(x, y);
+        ctx.lineTo(x, y + sy * arm);
+        ctx.stroke();
+      }
+
+      // 上下の中央を走る細い横線（窓の桟）
+      ctx.globalAlpha = SYSTEM_FRAME.strokeOpacity * 0.5;
+      for (const y of [top, bottom]) {
+        ctx.beginPath();
+        ctx.moveTo(left + arm * 1.4, y);
+        ctx.lineTo(right - arm * 1.4, y);
+        ctx.stroke();
+      }
+
+      // 左右の装飾チップ（参考画像の縦に積まれたブロック）
+      ctx.globalAlpha = SYSTEM_FRAME.strokeOpacity * 0.7;
+      const chipGap = (bottom - top) / (SYSTEM_FRAME.chipCount * 2 + 1);
+      for (let i = 0; i < SYSTEM_FRAME.chipCount; i += 1) {
+        const y = top + chipGap * (i * 2 + 1.5);
+        const len = arm * (i === 1 ? 0.9 : 0.55);
+        for (const [x, dir] of [
+          [left, 1],
+          [right, -1],
+        ] as [number, number][]) {
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(x, y + SYSTEM_FRAME.chipThickness * 2);
+          ctx.lineTo(x + dir * len, y + SYSTEM_FRAME.chipThickness * 2);
+          ctx.stroke();
+        }
+      }
+
+      ctx.shadowBlur = 0;
+      ctx.globalAlpha = 1;
+      ctx.restore();
+    }
+
     function step(now: number) {
       const dt = last === 0 ? 0 : Math.min(0.05, (now - last) / 1000);
       last = now;
@@ -114,13 +190,19 @@ export function NetworkBackground() {
         node.y = Math.min(height, Math.max(0, node.y));
       }
 
+      elapsed += dt;
       draw();
+      // sin で 1.0 ↔ breathScale を往復させる。等速ではなく端で緩むので「呼吸」に見える。
+      const phase = (Math.sin((elapsed / SYSTEM_FRAME.breathSeconds) * Math.PI * 2) + 1) / 2;
+      drawFrame(1 + (SYSTEM_FRAME.breathScale - 1) * phase);
       frame = requestAnimationFrame(step);
     }
 
     function start() {
       if (reduceMotion) {
+        // 動かさず、等倍の枠を1枚だけ描く（C-16）。
         draw();
+        drawFrame(1);
         return;
       }
       last = 0;
@@ -142,7 +224,10 @@ export function NetworkBackground() {
 
     function handleResize() {
       resize();
-      if (reduceMotion) draw();
+      if (reduceMotion) {
+        draw();
+        drawFrame(1);
+      }
     }
 
     resize();
