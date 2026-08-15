@@ -10,12 +10,18 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
-import { SPECIALTY_ORDER } from "@/lib/constants";
-import type { Snapshot, SpecialtyStatusKey } from "@/lib/types";
+import { FOUNDATION_ORDER, MAX_LEVEL, SPECIALTY_ORDER } from "@/lib/constants";
+import type { Snapshot, SpecialtyStatusKey, StatusKey } from "@/lib/types";
 
-// STATUS_ORDER の先頭7件のスライスである SPECIALTY_ORDER は型上 StatusKey[] のままのため、
-// 専門7つに絞ってから SpecialtyStatusKey[] として扱う（constants.ts 自体は変更しない）。
-const SPECIALTIES: readonly SpecialtyStatusKey[] = SPECIALTY_ORDER as readonly SpecialtyStatusKey[];
+// SPECIALTY_ORDER は `STATUS_ORDER.slice(0, 7)` で型上 StatusKey[] のままのため、
+// 無検査アサーションで SpecialtyStatusKey[] とみなさない。FOUNDATION_ORDER
+// （LEARNING/EXECUTION）を実行時に除外する型ガードで絞り込むことで、
+// STATUS_ORDER の並びが将来変わって先頭7つに土台2つが混入しても
+// LEARNING/EXECUTION が専門系列として二重に描画されない（constants.ts は変更しない）。
+function isSpecialtyKey(key: StatusKey): key is SpecialtyStatusKey {
+  return !(FOUNDATION_ORDER as readonly StatusKey[]).includes(key);
+}
+const SPECIALTIES: readonly SpecialtyStatusKey[] = SPECIALTY_ORDER.filter(isSpecialtyKey);
 
 // ── 表示専用の絵文字（このコンポーネントに閉じる。status-radar.tsx と同じ方針）
 const SPECIALTY_EMOJI: Readonly<Record<SpecialtyStatusKey, string>> = {
