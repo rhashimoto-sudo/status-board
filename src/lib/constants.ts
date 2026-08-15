@@ -96,3 +96,22 @@ export const BALANCE_TREND_MESSAGES = {
 // ── 成長推移
 export const HISTORY_DAYS = 90;
 export const HEATMAP_INTENSITY_STEPS = 5;      // 活動0を含む5段階
+
+// ── 背景のネットワークアニメーション（11_design_system.md 追記分） ──
+// 見た目の調整値。コンポーネントに直書きしない。
+export const NETWORK_BG = {
+  /** ノード密度。10000px² あたりの個数。画面が広いほどノードが増える。 */
+  densityPer10kPx: 0.9,
+  /** ノード数の上限（低性能端末とバッテリーの保護）。 */
+  maxNodes: 90,
+  /** 線を張る最大距離(px)。近いノード同士だけが繋がる。 */
+  linkDistance: 130,
+  /** ノードの移動速度(px/秒)。ゆっくり漂う程度に留める。 */
+  speed: 12,
+  /** ノードの半径(px)。 */
+  nodeRadius: 1.4,
+  /** 線の最大不透明度（距離が近いほど濃い）。 */
+  linkOpacity: 0.22,
+  /** ノードの不透明度。 */
+  nodeOpacity: 0.55,
+} as const;
