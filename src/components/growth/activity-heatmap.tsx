@@ -57,11 +57,16 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
 
   return (
     <div className="w-full min-w-0">
+      {/* `role="img"` を svg 直下に置くと配下がアクセシビリティツリーから刈られ、
+          各セルの <title>（日付+EXP）がスクリーンリーダーに一切届かなくなる（09_dashboard_spec.md
+          §4.2）。svg 自体は概要のみを述べる role="group" とし、各セルに role="img" + 個別の
+          aria-label を付けることで、セルごとの情報がアクセシビリティツリーに露出するようにする。
+          <title> はポインタ操作時のネイティブツールチップ用に残す。 */}
       <svg
         viewBox={`0 0 ${Math.max(svgWidth, CELL_STEP)} ${svgHeight}`}
         width="100%"
         style={{ display: "block" }}
-        role="img"
+        role="group"
         aria-label={`直近${days.length}日の活動ヒートマップ`}
       >
         {columns.map((column, columnIndex) => (
@@ -79,6 +84,8 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
                   fillOpacity={intensityToOpacity(cell.intensity)}
                   stroke="var(--color-border-hairline)"
                   strokeWidth={1}
+                  role="img"
+                  aria-label={`${cell.date} 獲得EXP ${cell.gainedExp}`}
                 >
                   <title>{`${cell.date} 獲得EXP ${cell.gainedExp}`}</title>
                 </rect>
