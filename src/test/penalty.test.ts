@@ -180,6 +180,41 @@ describe("gameOver", () => {
     expect(result.hallOfFame.entries[0]).toEqual(hallOfFame.entries[0]);
     expect(result.hallOfFame.entries[1].generation).toBe(1);
   });
+
+  it("前世代の expThreeMonthsAgo が残らず0にリセットされる（ゴースト系列の取りこぼし防止）", () => {
+    const statuses = Object.fromEntries(
+      STATUS_ORDER.map((key) => [key, { key, exp: 500, measured: true, expThreeMonthsAgo: 300 }]),
+    ) as unknown as StatusMap;
+    const state = makeState({ hp: 0, statuses });
+    const hallOfFame: HallOfFame = { generation: 1, entries: [] };
+
+    const result = gameOver(state, hallOfFame);
+
+    for (const key of STATUS_ORDER) {
+      expect(result.state.statuses[key].expThreeMonthsAgo).toBe(0);
+      expect(result.state.statuses[key].measured).toBe(true);
+    }
+  });
+
+  it("endedAt はローカルタイムゾーンの日付（UTC変換でずれない）", () => {
+    const state = makeState({ hp: 0 });
+    const hallOfFame: HallOfFame = { generation: 1, entries: [] };
+    const fixed = new Date(2026, 0, 15, 2, 0, 0); // ローカル 2026-01-15 02:00
+    const originalDate = globalThis.Date;
+    class MockDate extends originalDate {
+      constructor() {
+        super(fixed.getTime());
+      }
+    }
+    // @ts-expect-error テスト用に Date をローカル固定日時にモックする
+    globalThis.Date = MockDate;
+    try {
+      const result = gameOver(state, hallOfFame);
+      expect(result.hallOfFame.entries[0].endedAt).toBe("2026-01-15");
+    } finally {
+      globalThis.Date = originalDate;
+    }
+  });
 });
 
 describe("updateStreak", () => {
@@ -191,5 +226,21 @@ describe("updateStreak", () => {
   it("4/5 -> 0", () => {
     const dailies = [makeDaily(true), makeDaily(true), makeDaily(true), makeDaily(true), makeDaily(false)];
     expect(updateStreak(dailies, 3)).toBe(0);
+  });
+
+  it("件数不一致（データ不整合）は未達と区別してエラーを投げる: 空配列", () => {
+    expect(() => updateStreak([], 3)).toThrow();
+  });
+
+  it("件数不一致（データ不整合）は未達と区別してエラーを投げる: 全達成でも6件はエラー", () => {
+    const dailies = [
+      makeDaily(true),
+      makeDaily(true),
+      makeDaily(true),
+      makeDaily(true),
+      makeDaily(true),
+      makeDaily(true),
+    ];
+    expect(() => updateStreak(dailies, 3)).toThrow();
   });
 });

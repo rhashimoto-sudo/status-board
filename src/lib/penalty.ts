@@ -70,9 +70,21 @@ export function debuffMultiplier(debuffs: readonly Debuff[]): number {
   return strongest ? DEBUFF_MULTIPLIERS[strongest.kind] : NO_DEBUFF_MULTIPLIER;
 }
 
-/** デイリー5/5 達成時のみ +1、それ以外は 0 にリセットする（AC-12）。 */
+/**
+ * デイリー5/5 達成時のみ +1、それ以外（1つでも未達）は 0 にリセットする（AC-12）。
+ * デイリーは「毎日固定5個」（01_requirements.md §デイリー）が前提のため、
+ * dailies.length が DAILY_QUEST_COUNT と一致しないのは「未達」ではなくデータ不整合
+ * （読み込み中・件数ずれ等）である。これを未達と同一視して無条件にストリークを 0 にすると、
+ * 全達成していてもデータ不整合のタイミングでストリークが消えうるため、明確に区別してエラーとして
+ * 停止させる（安全に倒す。ストリークを黙って据え置く/据え置かないの判断を呼び出し側に押し付けない）。
+ */
 export function updateStreak(dailies: readonly DailyQuest[], streak: number): number {
-  const allClear = dailies.length === DAILY_QUEST_COUNT && dailies.every((d) => d.done);
+  if (dailies.length !== DAILY_QUEST_COUNT) {
+    throw new Error(
+      `updateStreak: dailies.length must be ${DAILY_QUEST_COUNT} (got ${dailies.length}) — データ不整合`,
+    );
+  }
+  const allClear = dailies.every((d) => d.done);
   return allClear ? streak + 1 : 0;
 }
 
@@ -156,6 +168,14 @@ export function applyPenalty(
   }
 }
 
+/** ローカルタイムゾーンで `YYYY-MM-DD` を生成する（`toISOString` はUTCになりJST深夜にずれるため使わない）。 */
+function localDateString(date: Date): string {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
 /**
  * 06_penalty.md §5.3 の手順で GAME OVER を処理する。
  * 1.スナップショット 2.entries に push（既存を消さない） 3.全初期化 4.HP=100 5.generation+1 6.phase は "main" のまま
@@ -169,11 +189,19 @@ export function gameOver(state: GameState, hallOfFame: HallOfFame): { state: Gam
     defeatedBosses: [],
     longestStreak: state.streak,
     survivedDays: 0,
-    endedAt: new Date().toISOString().slice(0, 10),
+    endedAt: localDateString(new Date()),
   };
 
+  // §5.1 は exp/Lv/称号だけでなく「実績・進行中クエストの進捗」も初期化対象とする。
+  // expThreeMonthsAgo（レーダーのゴースト系列）を前世代の値のまま残すと、消えた前世代の形を
+  // 描き続けてしまうため exp と同じく 0 にする。measured は §5.3 手順6「phase は "main" のまま
+  // （測定期間には戻らない）」により、新生成も main フェーズの通常表示（"???" にはならない）
+  // という前提のため true に戻す（calibration に戻らない以上 false は意味を持たない）。
   const resetStatuses = Object.fromEntries(
-    STATUS_ORDER.map((key) => [key, { ...state.statuses[key], exp: 0 }]),
+    STATUS_ORDER.map((key) => [
+      key,
+      { ...state.statuses[key], exp: 0, expThreeMonthsAgo: 0, measured: true },
+    ]),
   ) as unknown as StatusMap;
 
   const nextState: GameState = {
