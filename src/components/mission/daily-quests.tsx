@@ -51,6 +51,16 @@ export function DailyQuests({ dailies }: DailyQuestsProps) {
             <span aria-hidden="true">{daily.done ? "✓" : "・"}</span>
             <span className="min-w-0 flex-1 break-words text-[color:var(--color-text-primary)]">
               {daily.title}
+              {/*
+                探索枠（00_profile.md §6.4）。未知に触れること自体が完了条件で成果を問わないため、
+                他の4個と区別が付かないと「できなかった」と誤認される。ラベルで明示する。
+                色は violet（既存のアクセント2色の範囲内。新しい色相を増やさない）。
+              */}
+              {daily.exploration && (
+                <span className="ml-2 whitespace-nowrap rounded-[3px] border border-[color:var(--color-accent-violet)]/40 px-1.5 py-0.5 text-[11px] tracking-[0.08em] text-[color:var(--color-accent-violet)]">
+                  探索枠
+                </span>
+              )}
             </span>
             <span className="whitespace-nowrap text-[13px] text-[color:var(--color-text-secondary)]">
               {daily.main} +<StatValue>{daily.expectedExp}</StatValue>
@@ -76,6 +86,13 @@ export function DailyQuests({ dailies }: DailyQuestsProps) {
           </>
         )}
       </div>
+
+      {/* 探索枠の完了条件が他の4個と違うことを明記する（成果を出せなかった、と誤認させない）。 */}
+      {dailies.some((daily) => daily.exploration) && (
+        <p className="mt-3 text-[13px] text-[color:var(--color-accent-violet)]">
+          探索枠は「触れたこと」で完了。成果は問いません
+        </p>
+      )}
 
       {nextSelectableDay && (
         <p className="mt-3 text-[13px] text-[color:var(--color-text-secondary)]">

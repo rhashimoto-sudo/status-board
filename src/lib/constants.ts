@@ -44,6 +44,23 @@ export const HP_PENALTY = {
   dailyMiss: -10, guerrillaExpired: -25, missionFailed: -40, bossFailed: -50,
 } as const;
 export const HP_RECOVERY = { dailyAllClear: 5, missionCleared: 20, bossCleared: 50 } as const;
+/**
+ * ミッション完遂時の HP 回復量を難易度で変える（00_profile.md §6.1 / 12_rewards.md）。
+ * 値は「HP_MAX の何分の1か」を表す除数。実回復量は `Math.round(HP_MAX / divisor)`。
+ *
+ * 設計の前提:
+ * - D3 = 1/5 = 20 は `HP_RECOVERY.missionCleared` の従来値。**中央値として据え置き**、
+ *   その上下に開く。これで既存のバランス前提を壊さない
+ * - `DIFFICULTY_BASE_EXP`（10/25/60/150/400）の指数曲線は**使えない**。
+ *   EXP は青天井だが HP は 100 の器であり、D5 を指数で伸ばすと1回で全快して
+ *   ペナルティが無力化するため、意図的に緩やかな曲線にしている
+ * - 上限は `bossCleared: 50` を超えない（ボス討伐が常に最大の回復であること）
+ * - 失敗側（`HP_PENALTY.missionFailed`）は難易度で開かない。固定のままにすることで
+ *   「難しいほどリスク調整後の期待値が良い」傾斜が生まれる（D1は成功率89%、D5は55%で損益分岐）
+ */
+export const HP_RECOVERY_DIVISOR_BY_DIFFICULTY = {
+  D1: 20, D2: 10, D3: 5, D4: 4, D5: 3,
+} as const;                                    // → +5 / +10 / +20 / +25 / +33
 // 06_penalty.md §7「改訂の経緯（確定済み）」: 旧案 >50緑/>25黄/<=25赤 は警告が遅すぎるため改訂。
 // 現行: 71〜100 緑（safe）/ 41〜70 黄（warn）/ 0〜40 赤（danger）。旧案の 50/25 は使わない。
 export const HP_COLOR_THRESHOLDS = { safe: 70, warn: 40 } as const;  // >70 緑 / >40 黄 / <=40 赤
@@ -66,6 +83,17 @@ export const NO_DEBUFF_MULTIPLIER = 1.0;
 
 // ── クエスト・ストリーク
 export const DAILY_QUEST_COUNT = 5;            // 固定5個
+/**
+ * デイリー5個のうち「探索枠」の個数（00_profile.md §6.4）。
+ *
+ * 🔥好奇心・探索 は本人の**長期の起爆剤**だが、合格条件から逆算したクエストは
+ * すべて既知の課題になりがちで、放っておくと探索が締め出される。枠として確保する。
+ *
+ * 探索枠は**未知に触れること自体が完了条件**であり、成果を問わない
+ * （新規性が高く出るため 🔥LEARNING に自然に効く）。
+ * `quest-designer` はこの個数を必ず満たすこと。0 にしてはならない。
+ */
+export const DAILY_EXPLORATION_SLOT_COUNT = 1;
 export const URGENT_GLOW_WITHIN_DAYS = 3;      // 残り3日未満で赤く発光
 
 // ── 表示タイムゾーン（司令塔確定。docs/10_notion_schema.md:64 は未確定のためここで固定する）

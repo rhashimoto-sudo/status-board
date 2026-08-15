@@ -9,6 +9,8 @@ import {
   HP_MAX,
   HP_MIN,
   HP_PENALTY,
+  HP_RECOVERY,
+  HP_RECOVERY_DIVISOR_BY_DIFFICULTY,
   NO_DEBUFF_MULTIPLIER,
   STATUS_ORDER,
 } from "./constants";
@@ -17,6 +19,7 @@ import { computeTotalLevel, levelsOf } from "./level";
 import type {
   Debuff,
   DailyQuest,
+  Difficulty,
   GameState,
   HallOfFame,
   HallOfFameEntry,
@@ -26,6 +29,8 @@ import type {
   Phase,
   PenaltyKind,
   PenaltyResult,
+  RecoveryEvent,
+  RecoveryResult,
   StatusMap,
 } from "./types";
 
@@ -54,6 +59,37 @@ export function hpState(hp: number, phase: Phase): HpState {
     zone: hpZone(current),
     incapacitated: current < HP_INCAPACITATED_BELOW,
   };
+}
+
+/**
+ * ミッション完遂時の HP 回復量を難易度から求める（00_profile.md §6.1）。
+ * `HP_MAX` の「何分の1」かで定義し、四捨五入して整数にする（HP は整数で扱う）。
+ */
+export function missionRecoveryAmount(difficulty: Difficulty): number {
+  return Math.round(HP_MAX / HP_RECOVERY_DIVISOR_BY_DIFFICULTY[difficulty]);
+}
+
+/**
+ * HP 回復を適用する（06_penalty.md §2.1）。`applyPenalty` と対になる。
+ *
+ * 回復量は難易度に応じて変わるのがミッションのみ。デイリー全達成は日次の固定値、
+ * ボスは個別の `hpReward` を持つ（ボス討伐が常に最大の回復であること）。
+ *
+ * > 呼び出し側への注意（00_profile.md §6.1 減点の三原則）:
+ * > HP の増減を画面や通知に出すときは、減点を単独で出さない。この関数が返す `hpDelta` は
+ * > 「取り返す手」を提示するための材料であり、残量を脅しに使うために使わないこと。
+ */
+export function applyRecovery(hp: number, event: RecoveryEvent): RecoveryResult {
+  const hpDelta =
+    event.kind === "dailyAllClear"
+      ? HP_RECOVERY.dailyAllClear
+      : event.kind === "missionCleared"
+        ? missionRecoveryAmount(event.difficulty)
+        : (event.hpReward ?? HP_RECOVERY.bossCleared);
+
+  const nextHp = clampHp(hp + hpDelta);
+  // 名目 − 実効。満タン付近では回復が捨てられる（＝傷ついているときほど回復報酬の価値が高い）。
+  return { hpDelta, nextHp, wasted: hpDelta - (nextHp - clampHp(hp)) };
 }
 
 /** DEBUFF_ORDER（重い順）で最初に該当する1件だけを返す（S-3 / C-8）。 */
