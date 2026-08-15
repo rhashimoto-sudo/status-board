@@ -154,6 +154,37 @@ describe("computeTotalLevel", () => {
   });
 });
 
+describe("levelProgress と expToNextLevel の分母一致（status-list.tsx のバー/テキスト表示の根拠）", () => {
+  // status-list.tsx はバー(levelProgress)とテキスト(expToNextLevel)を同じLv帯から算出する。
+  // 恒等式 floor + progress * (ceil - floor) + remaining === ceil が常に成り立つことを固定する。
+  it.each([
+    [0, 1], // Lv1 の下限
+    [99, 1], // Lv1 帯の直前
+    [100, 2], // Lv2 の下限
+    [925, 4], // Lv4 帯の直前（帯境界の直前）
+    [926, 5], // Lv5 の下限（帯境界の直後）
+    [1580, 5], // Lv5 帯の直前
+    [1581, 6], // Lv6 の下限
+  ])("exp=%i (Lv%i) でバーとテキストの分母が一致する", (exp, expectedLevel) => {
+    expect(levelFromExp(exp)).toBe(expectedLevel);
+
+    const progress = levelProgress(exp);
+    const remaining = expToNextLevel(exp);
+    expect(remaining).not.toBeNull();
+
+    const floor = levelFloorExp(expectedLevel);
+    const ceil = exp + remaining!; // = 次Lvの累積閾値（テキスト側が使う値）
+    // 恒等式: floor + progress*(ceil-floor) + remaining === ceil（バーとテキストが同じLv帯を参照する証明）
+    expect(floor + progress * (ceil - floor) + remaining!).toBeCloseTo(ceil, 10);
+  });
+
+  it("Lv10（MAX）では expToNextLevel が null、levelProgress が 1 を返す", () => {
+    expect(levelFromExp(11287)).toBe(10);
+    expect(expToNextLevel(11287)).toBeNull();
+    expect(levelProgress(11287)).toBe(1);
+  });
+});
+
 describe("totalLevelProgress", () => {
   it("小数部を 0..1 で返す", () => {
     expect(totalLevelProgress(4.2)).toBeCloseTo(0.2);
