@@ -1,6 +1,7 @@
 import { Panel } from "@/components/ui/panel";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatValue } from "@/components/ui/stat-value";
+import { missionRecoveryAmount } from "@/lib/penalty";
 import type { Mission } from "@/lib/types";
 
 type MissionListProps = {
@@ -61,6 +62,19 @@ function MissionRow({ mission }: { mission: Mission }) {
           </li>
         ))}
       </ul>
+
+      {/*
+        完遂報酬を明示する（00_profile.md §6.1）。報酬が見えなければ「取り返す手」として機能しない。
+        難易度で回復量が変わるため、難易度もここで出す（なぜこの量なのかが分からないと納得できない）。
+        減点は併記しない。減点だけを単独で出さないのと同様、報酬の隣に脅しを置かない。
+      */}
+      <p className="mt-3 text-[13px] text-[color:var(--color-text-secondary)]">
+        完遂報酬{" "}
+        <span className="text-[color:var(--color-hp-safe)]">
+          ♥HP +<StatValue>{missionRecoveryAmount(mission.difficulty)}</StatValue>
+        </span>{" "}
+        <span className="text-[color:var(--color-text-muted)]">（{mission.difficulty}）</span>
+      </p>
     </li>
   );
 }

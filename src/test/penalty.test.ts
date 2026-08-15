@@ -1,15 +1,19 @@
 import { describe, expect, it } from "vitest";
 import {
   applyPenalty,
+  applyRecovery,
   clampHp,
   debuffMultiplier,
   gameOver,
   hpZone,
   isGameOver,
+  missionRecoveryAmount,
   updateStreak,
 } from "@/lib/penalty";
-import { STATUS_ORDER } from "@/lib/constants";
-import type { DailyQuest, Debuff, GameState, HallOfFame, StatusMap } from "@/lib/types";
+import { HP_MAX, HP_PENALTY, HP_RECOVERY, STATUS_ORDER } from "@/lib/constants";
+import type { DailyQuest, Debuff, Difficulty, GameState, HallOfFame, StatusMap } from "@/lib/types";
+
+const DIFFICULTIES: readonly Difficulty[] = ["D1", "D2", "D3", "D4", "D5"];
 
 function makeStatuses(exp: number): StatusMap {
   return Object.fromEntries(
@@ -40,6 +44,7 @@ function makeDaily(done: boolean): DailyQuest {
     expectedExp: 10,
     done,
     lockedUntil: "2026-01-01T00:00:00.000Z",
+    exploration: false,
   };
 }
 
@@ -277,5 +282,60 @@ describe("updateStreak", () => {
       makeDaily(true),
     ];
     expect(() => updateStreak(dailies, 3)).toThrow();
+  });
+});
+
+describe("applyRecovery / missionRecoveryAmount", () => {
+  it("難易度が上がるほど回復量が増える（単調増加）", () => {
+    const amounts = DIFFICULTIES.map(missionRecoveryAmount);
+    expect(amounts).toEqual([5, 10, 20, 25, 33]);
+    for (let i = 1; i < amounts.length; i += 1) {
+      expect(amounts[i]!).toBeGreaterThan(amounts[i - 1]!);
+    }
+  });
+
+  it("D3 は従来の固定値 HP_RECOVERY.missionCleared と一致する（中央値の据え置き）", () => {
+    expect(missionRecoveryAmount("D3")).toBe(HP_RECOVERY.missionCleared);
+  });
+
+  it("最大の回復は常にボス討伐であること（D5 でもボスを超えない）", () => {
+    expect(missionRecoveryAmount("D5")).toBeLessThan(HP_RECOVERY.bossCleared);
+  });
+
+  it("ミッション完遂は難易度ぶん回復する", () => {
+    expect(applyRecovery(50, { kind: "missionCleared", difficulty: "D5" })).toEqual({
+      hpDelta: 33,
+      nextHp: 83,
+      wasted: 0,
+    });
+  });
+
+  it("HP は 100 を超えない。超過分は wasted に出る", () => {
+    const result = applyRecovery(90, { kind: "missionCleared", difficulty: "D5" });
+    expect(result.nextHp).toBe(HP_MAX);
+    expect(result.hpDelta).toBe(33);
+    expect(result.wasted).toBe(23);
+  });
+
+  it("満タンでは回復が全部捨てられる（傷ついているほど回復報酬の価値が高い）", () => {
+    const result = applyRecovery(HP_MAX, { kind: "missionCleared", difficulty: "D1" });
+    expect(result.nextHp).toBe(HP_MAX);
+    expect(result.wasted).toBe(result.hpDelta);
+  });
+
+  it("デイリー全達成は難易度を持たず固定値", () => {
+    expect(applyRecovery(50, { kind: "dailyAllClear" }).nextHp).toBe(50 + HP_RECOVERY.dailyAllClear);
+  });
+
+  it("ボスは個別の hpReward を使い、無ければ既定値", () => {
+    expect(applyRecovery(0, { kind: "bossCleared", hpReward: 60 }).nextHp).toBe(60);
+    expect(applyRecovery(0, { kind: "bossCleared" }).nextHp).toBe(HP_RECOVERY.bossCleared);
+  });
+
+  it("失敗側は難易度で開かない: どの難易度でも成功の回復量は missionFailed の減点を下回る", () => {
+    // 完遂の回復が未達の減点を上回ると、失敗を繰り返しても HP が減らなくなる。
+    for (const d of DIFFICULTIES) {
+      expect(missionRecoveryAmount(d)).toBeLessThan(Math.abs(HP_PENALTY.missionFailed));
+    }
   });
 });

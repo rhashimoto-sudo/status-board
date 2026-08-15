@@ -37,6 +37,65 @@ export const DERIVATIONS = [
 ] as const;                                    // requires は AND 条件（配列全件を満たす）
 export const FINAL_CLASS_TOTAL_LEVEL = 9;      // 最終クラスは総合 Lv9 + 全派生解放
 
+// ── work-dashboard のタスク → 9軸の対応（10_notion_schema.md §8）
+//
+// 原則: `作業種別` =「どの能力を使ったか」→ **主軸**
+//       `領域`     =「何の分野か」      → **副軸**
+// 領域（SEO/MEO/AI開発）は業務ドメインであって能力ではない。同じ「集計」でも
+// SEO でも MEO でも使う力は 📊DATA なので、主軸は必ず作業種別から決める。
+//
+// この表は work-dashboard の Notion 選択肢と1:1で対応する。向こうに選択肢が
+// 増えたらここも足すこと（欠けている値は `null` 扱いになり EXP が付かない）。
+//
+// `types.ts` は `constants.ts` を import するため、逆向きの import はできない（循環になる）。
+// 主軸に使える軸の型は `STATUS_ORDER` から導出する（土台2軸を除いた専門7軸）。
+type SpecialtyKey = Exclude<(typeof STATUS_ORDER)[number], "LEARNING" | "EXECUTION">;
+
+export const WORK_TYPE_TO_MAIN_STATUS = {
+  "施策立案・設計":     "INT",
+  "分析・調査":         "DATA",
+  "施策実装":           "MARKETING",
+  "開発実装":           "TECH",
+  "報告・定例":         "BRIDGE",
+  "調整・相談":         "BRIDGE",
+  "集計":               "DATA",
+  "資料・スライド作成": "MARKETING",
+  "AIリライト運用":     "TECH",
+  "プロジェクト分解":   "PM",
+  // 本人指定（2026-08-15）。組織に向けて発信し足並みを揃える仕事として PM に寄せる。
+  // 2026-08-15 時点で Notion 側の選択肢には未反映。向こうに追加が必要。
+  "発信・共有":         "PM",
+} as const satisfies Record<string, SpecialtyKey>;
+
+// 領域 → 副軸。主軸と重複した場合は副軸なしとして扱う（`deriveStatuses`）。
+export const AREA_TO_SUB_STATUS = {
+  "SEO":      "MARKETING",
+  "MEO":      "MARKETING",
+  "店頭改善": "MARKETING",
+  "AI開発":   "TECH",
+  "その他":   null,
+} as const satisfies Record<string, SpecialtyKey | null>;
+
+/**
+ * フェーズ完了を 👑PM のクエストとして扱う（10_notion_schema.md §8.2）。
+ *
+ * 日々のタスク221件を調べたところ、PM が主軸になるのは「プロジェクト分解」だけで、
+ * 今年の主戦場の筆頭（00_profile.md §4）である PM がほぼ伸びない状態だった。
+ * PM の仕事は「タスクを実行すること」ではなく「タスクを設計し、人を動かし、
+ * 期日に着地させること」であり、タスク行ではなく**フェーズの側**に現れるため。
+ *
+ * 難易度は配下タスク数から決める。`見積工数` は221件すべて未入力で使えない（実測）。
+ */
+export const PHASE_DIFFICULTY_BY_CHILD_COUNT = [
+  { maxChildren: 2,        difficulty: "D2" },
+  { maxChildren: 5,        difficulty: "D3" },
+  { maxChildren: 10,       difficulty: "D4" },
+  { maxChildren: Infinity, difficulty: "D5" },
+] as const;
+
+/** 期日内に着地したフェーズの完遂度。遅延した場合はこの値に下げる。 */
+export const PHASE_COMPLETION = { onTime: 1.0, late: 0.7 } as const;
+
 // ── HP（06_penalty.md §2）
 export const HP_MAX = 100;
 export const HP_MIN = 0;
@@ -44,6 +103,23 @@ export const HP_PENALTY = {
   dailyMiss: -10, guerrillaExpired: -25, missionFailed: -40, bossFailed: -50,
 } as const;
 export const HP_RECOVERY = { dailyAllClear: 5, missionCleared: 20, bossCleared: 50 } as const;
+/**
+ * ミッション完遂時の HP 回復量を難易度で変える（00_profile.md §6.1 / 12_rewards.md）。
+ * 値は「HP_MAX の何分の1か」を表す除数。実回復量は `Math.round(HP_MAX / divisor)`。
+ *
+ * 設計の前提:
+ * - D3 = 1/5 = 20 は `HP_RECOVERY.missionCleared` の従来値。**中央値として据え置き**、
+ *   その上下に開く。これで既存のバランス前提を壊さない
+ * - `DIFFICULTY_BASE_EXP`（10/25/60/150/400）の指数曲線は**使えない**。
+ *   EXP は青天井だが HP は 100 の器であり、D5 を指数で伸ばすと1回で全快して
+ *   ペナルティが無力化するため、意図的に緩やかな曲線にしている
+ * - 上限は `bossCleared: 50` を超えない（ボス討伐が常に最大の回復であること）
+ * - 失敗側（`HP_PENALTY.missionFailed`）は難易度で開かない。固定のままにすることで
+ *   「難しいほどリスク調整後の期待値が良い」傾斜が生まれる（D1は成功率89%、D5は55%で損益分岐）
+ */
+export const HP_RECOVERY_DIVISOR_BY_DIFFICULTY = {
+  D1: 20, D2: 10, D3: 5, D4: 4, D5: 3,
+} as const;                                    // → +5 / +10 / +20 / +25 / +33
 // 06_penalty.md §7「改訂の経緯（確定済み）」: 旧案 >50緑/>25黄/<=25赤 は警告が遅すぎるため改訂。
 // 現行: 71〜100 緑（safe）/ 41〜70 黄（warn）/ 0〜40 赤（danger）。旧案の 50/25 は使わない。
 export const HP_COLOR_THRESHOLDS = { safe: 70, warn: 40 } as const;  // >70 緑 / >40 黄 / <=40 赤
@@ -66,6 +142,17 @@ export const NO_DEBUFF_MULTIPLIER = 1.0;
 
 // ── クエスト・ストリーク
 export const DAILY_QUEST_COUNT = 5;            // 固定5個
+/**
+ * デイリー5個のうち「探索枠」の個数（00_profile.md §6.4）。
+ *
+ * 🔥好奇心・探索 は本人の**長期の起爆剤**だが、合格条件から逆算したクエストは
+ * すべて既知の課題になりがちで、放っておくと探索が締め出される。枠として確保する。
+ *
+ * 探索枠は**未知に触れること自体が完了条件**であり、成果を問わない
+ * （新規性が高く出るため 🔥LEARNING に自然に効く）。
+ * `quest-designer` はこの個数を必ず満たすこと。0 にしてはならない。
+ */
+export const DAILY_EXPLORATION_SLOT_COUNT = 1;
 export const URGENT_GLOW_WITHIN_DAYS = 3;      // 残り3日未満で赤く発光
 
 // ── 表示タイムゾーン（司令塔確定。docs/10_notion_schema.md:64 は未確定のためここで固定する）

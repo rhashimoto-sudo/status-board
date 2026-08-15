@@ -29,10 +29,24 @@ export type QuestBase = {
   involvedStatuses: readonly MainStatusKey[];  // 3つ以上で《構造化》発動（加算先とは別概念）
   expectedExp: number;
 };
-export type DailyQuest    = QuestBase & { kind: "daily"; done: boolean; lockedUntil: string };
+/**
+ * `exploration` は「未知に触れること自体が完了条件」の探索枠（00_profile.md §6.4）。
+ * デイリー5個のうち必ず1個がこれになる（`DAILY_EXPLORATION_SLOT_COUNT`）。成果を問わない。
+ *
+ * `main` が `null` のものは**生活基盤のデイリー**（睡眠・運動・スマホ断ちなど）。
+ * 9軸はすべて能力軸であり、生活習慣はどこに入れても嘘になるため軸を持たせない
+ * （`main` を埋めると、早起きしただけでレーダーの該当軸が伸びて形が意味を失う）。
+ * EXP は 0 だが、**ストリーク経由で ⚔️EXECUTION に自動導出される**（03_status_system.md §1.1）。
+ * デイリーの本体は EXP ではなくストリークなので、これで機能は落ちない。
+ */
+export type DailyQuest    = Omit<QuestBase, "main"> & {
+  kind: "daily"; main: MainStatusKey | null;
+  done: boolean; lockedUntil: string; exploration: boolean;
+};
 export type GuerrillaQuest= QuestBase & { kind: "guerrilla"; deadline: string; difficulty: Difficulty };
 export type ChildQuest    = { id: string; title: string; done: boolean };
-export type Mission       = QuestBase & { kind: "mission"; deadline: string; children: readonly ChildQuest[] };
+/** `difficulty` は完遂時の HP 回復量を決める（`HP_RECOVERY_DIVISOR_BY_DIFFICULTY`）。 */
+export type Mission       = QuestBase & { kind: "mission"; deadline: string; difficulty: Difficulty; children: readonly ChildQuest[] };
 export type Boss          = QuestBase & { kind: "boss"; deadline: string; hpReward: number };
 export type Quest = DailyQuest | GuerrillaQuest | Mission | Boss;
 
@@ -53,6 +67,28 @@ export type HpZone = "safe" | "warn" | "danger";
 export type DebuffKind = (typeof DEBUFF_ORDER)[number];    // "incapacitated" | "weakened" | "defeated"
 export type Debuff = { kind: DebuffKind; remainingDays: number };
 export type HpState = { current: number; max: number; zone: HpZone; incapacitated: boolean };
+
+/**
+ * HP 回復イベント（06_penalty.md §2.1）。ペナルティと対になる。
+ * ミッションのみ難易度で回復量が変わる（00_profile.md §6.1「取り返す手」）。
+ */
+export type RecoveryEvent =
+  | { kind: "dailyAllClear" }
+  | { kind: "missionCleared"; difficulty: Difficulty }
+  /** ボスは個別に `hpReward` を持つ。省略時は `HP_RECOVERY.bossCleared`。 */
+  | { kind: "bossCleared"; hpReward?: number };
+
+export type RecoveryResult = {
+  /** 回復の名目量（クランプ前）。「D5 完遂で +33」のように表示に使う。 */
+  hpDelta: number;
+  /** 適用後の確定 HP。0..100 にクランプ済み。 */
+  nextHp: number;
+  /**
+   * 上限 100 に阻まれて捨てられた量。名目 − 実効。
+   * 回復報酬は傷ついているときほど価値が高いという性質を UI・navigator が扱えるようにする。
+   */
+  wasted: number;
+};
 
 export type PenaltyKind = "dailyMiss" | "guerrillaExpired" | "missionFailed" | "bossFailed";
 export type PenaltyResult = {

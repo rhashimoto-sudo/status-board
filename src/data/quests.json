@@ -3,52 +3,61 @@
     {
       "id": "daily-1",
       "kind": "daily",
-      "title": "技術記事を1本読み、要点を3行で残す",
-      "main": "INT",
-      "involvedStatuses": ["INT"],
-      "expectedExp": 10,
+      "title": "まだ触ったことのない技術・分野に30分触れる（成果は問わない）",
+      "main": "TECH",
+      "involvedStatuses": [
+        "TECH"
+      ],
+      "expectedExp": 25,
       "done": true,
-      "lockedUntil": "2026-08-17T00:00:00+09:00"
+      "lockedUntil": "2026-08-17T00:00:00+09:00",
+      "exploration": true
     },
     {
       "id": "daily-2",
       "kind": "daily",
-      "title": "コードを30分以上書く（何でもよい）",
-      "main": "TECH",
-      "involvedStatuses": ["TECH"],
+      "title": "朝30分以上で開発や思考整理をする",
+      "main": "INT",
+      "involvedStatuses": [
+        "INT"
+      ],
       "expectedExp": 15,
       "done": true,
-      "lockedUntil": "2026-08-17T00:00:00+09:00"
+      "lockedUntil": "2026-08-17T00:00:00+09:00",
+      "exploration": false
     },
     {
       "id": "daily-3",
       "kind": "daily",
-      "title": "英語の技術文書を10分読む",
-      "main": "ENGLISH",
-      "involvedStatuses": ["ENGLISH"],
-      "expectedExp": 8,
+      "title": "ベッドにいる時と朝にスマホを触らない",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": false,
-      "lockedUntil": "2026-08-17T00:00:00+09:00"
+      "lockedUntil": "2026-08-17T00:00:00+09:00",
+      "exploration": false
     },
     {
       "id": "daily-4",
       "kind": "daily",
-      "title": "数値を1つ見て気づきを1行残す",
-      "main": "DATA",
-      "involvedStatuses": ["DATA"],
-      "expectedExp": 8,
+      "title": "朝6時に起きる",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": false,
-      "lockedUntil": "2026-08-17T00:00:00+09:00"
+      "lockedUntil": "2026-08-17T00:00:00+09:00",
+      "exploration": false
     },
     {
       "id": "daily-5",
       "kind": "daily",
-      "title": "今日やることを朝に3つ決める",
-      "main": "PM",
-      "involvedStatuses": ["PM"],
-      "expectedExp": 5,
+      "title": "朝15分のランニングをする",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": true,
-      "lockedUntil": "2026-08-17T00:00:00+09:00"
+      "lockedUntil": "2026-08-17T00:00:00+09:00",
+      "exploration": false
     }
   ],
   "guerrillas": [
@@ -58,7 +67,10 @@
       "title": "取引先からの緊急仕様確認への対応",
       "main": "BRIDGE",
       "sub": "PM",
-      "involvedStatuses": ["BRIDGE", "PM"],
+      "involvedStatuses": [
+        "BRIDGE",
+        "PM"
+      ],
       "expectedExp": 40,
       "deadline": "2026-08-12T18:00:00+09:00",
       "difficulty": "D3"
@@ -71,15 +83,36 @@
       "title": "顧客向けダッシュボードのMVPを完成させる",
       "main": "TECH",
       "sub": "PM",
-      "involvedStatuses": ["TECH", "PM", "DATA"],
+      "involvedStatuses": [
+        "TECH",
+        "PM",
+        "DATA"
+      ],
       "expectedExp": 350,
       "deadline": "2026-09-15T23:59:59+09:00",
       "children": [
-        { "id": "mission-1-child-1", "title": "画面ワイヤーフレームを固める", "done": true },
-        { "id": "mission-1-child-2", "title": "ダミーデータでの表示を完成させる", "done": true },
-        { "id": "mission-1-child-3", "title": "レスポンシブ対応を確認する", "done": false },
-        { "id": "mission-1-child-4", "title": "本人レビューを受ける", "done": false }
-      ]
+        {
+          "id": "mission-1-child-1",
+          "title": "画面ワイヤーフレームを固める",
+          "done": true
+        },
+        {
+          "id": "mission-1-child-2",
+          "title": "ダミーデータでの表示を完成させる",
+          "done": true
+        },
+        {
+          "id": "mission-1-child-3",
+          "title": "レスポンシブ対応を確認する",
+          "done": false
+        },
+        {
+          "id": "mission-1-child-4",
+          "title": "本人レビューを受ける",
+          "done": false
+        }
+      ],
+      "difficulty": "D4"
     }
   ],
   "bosses": [
@@ -89,7 +122,11 @@
       "title": "四半期リリース計画の完遂",
       "main": "PM",
       "sub": "TECH",
-      "involvedStatuses": ["PM", "TECH", "DATA"],
+      "involvedStatuses": [
+        "PM",
+        "TECH",
+        "DATA"
+      ],
       "expectedExp": 800,
       "deadline": "2026-08-22T23:59:59+09:00",
       "hpReward": 50
@@ -109,7 +146,12 @@
       "name": "社内ナレッジ共有基盤の立ち上げ",
       "date": "2026-07-02",
       "hpDamage": 40,
-      "expDamage": [{ "key": "EXECUTION", "amount": -90 }],
+      "expDamage": [
+        {
+          "key": "EXECUTION",
+          "amount": -90
+        }
+      ],
       "revengeable": true
     }
   ]
