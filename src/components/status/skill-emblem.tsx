@@ -4,6 +4,10 @@ import { StatValue } from "@/components/ui/stat-value";
 
 const LOCKED_LABEL = "覚醒後に解放";
 const SKILL_NAME = "《構造化》";
+// 背景の紫グロー不透明度の上限。1.0 まで許すと高Lvで背景がほぼ #8b5cf6 単色になり、
+// シアン Lv ラベル（約4.4:1）・《構造化》ラベルの WCAG AA（4.5:1）を割り込む。
+// 0.5 なら --color-surface とのミックス背景に対してどちらも 4.5:1 を上回る（B-2）。
+const MAX_GLOW_OPACITY = 0.5;
 
 type SkillEmblemProps = {
   /**
@@ -20,7 +24,10 @@ type SkillEmblemProps = {
 export function SkillEmblem({ skillLevel }: SkillEmblemProps) {
   const locked = skillLevel === null;
   // 輝度段階: Lv1=最も暗い 〜 Lv10=最も明るい。シアン×バイオレットの2色以外は使わない。
-  const glowOpacity = locked ? 0 : 0.15 + 0.85 * ((skillLevel - 1) / 9);
+  // MAX_GLOW_OPACITY で頭打ちにし、高Lvでもラベルのコントラストを AA 以上に保つ（B-2）。
+  const glowOpacity = locked
+    ? 0
+    : Math.min(MAX_GLOW_OPACITY, 0.15 + 0.85 * ((skillLevel - 1) / 9));
 
   return (
     <div
