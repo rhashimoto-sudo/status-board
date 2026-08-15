@@ -117,9 +117,14 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
           ResponsiveContainer は aspect=1 の正方形なので、中心は常に 50%/50%。 */}
       <div className="relative w-full">
         <ResponsiveContainer width="100%" aspect={1}>
-          {/* outerRadius を 70% → 58% に縮小し、375px 幅でも軸ラベル（📣 MARKETING 等）が
-              SVG 端でクリップされない余白を確保する（B-1）。 */}
-          <RadarChart data={rows} outerRadius="58%">
+          {/* outerRadius を 70% → 58% → 55% に縮小し、375px 幅でも軸ラベル
+              （🔥 LEARNING 等）が SVG 端でクリップされない余白を確保する（B-1）。
+              9軸は startAngle=90 から時計回り40°刻み（STATUS_ORDER順）で配置され、
+              各軸の水平オフセットは radius * cos(angle) で決まる。左端に最も寄るのは
+              LEARNING（角度170°、cos≈-0.985）で、半径を縮めるほど全軸のオフセットが
+              一様に中心へ寄るため、他8軸（📣 MARKETING・🧠 INT 含む）の既存の
+              クリップ解消の余白はむしろ広がる方向にしか動かない。 */}
+          <RadarChart data={rows} outerRadius="55%">
             <PolarGrid stroke="var(--color-border-hairline)" />
             <PolarAngleAxis
               dataKey="key"
