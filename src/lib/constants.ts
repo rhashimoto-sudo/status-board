@@ -37,6 +37,65 @@ export const DERIVATIONS = [
 ] as const;                                    // requires は AND 条件（配列全件を満たす）
 export const FINAL_CLASS_TOTAL_LEVEL = 9;      // 最終クラスは総合 Lv9 + 全派生解放
 
+// ── work-dashboard のタスク → 9軸の対応（10_notion_schema.md §8）
+//
+// 原則: `作業種別` =「どの能力を使ったか」→ **主軸**
+//       `領域`     =「何の分野か」      → **副軸**
+// 領域（SEO/MEO/AI開発）は業務ドメインであって能力ではない。同じ「集計」でも
+// SEO でも MEO でも使う力は 📊DATA なので、主軸は必ず作業種別から決める。
+//
+// この表は work-dashboard の Notion 選択肢と1:1で対応する。向こうに選択肢が
+// 増えたらここも足すこと（欠けている値は `null` 扱いになり EXP が付かない）。
+//
+// `types.ts` は `constants.ts` を import するため、逆向きの import はできない（循環になる）。
+// 主軸に使える軸の型は `STATUS_ORDER` から導出する（土台2軸を除いた専門7軸）。
+type SpecialtyKey = Exclude<(typeof STATUS_ORDER)[number], "LEARNING" | "EXECUTION">;
+
+export const WORK_TYPE_TO_MAIN_STATUS = {
+  "施策立案・設計":     "INT",
+  "分析・調査":         "DATA",
+  "施策実装":           "MARKETING",
+  "開発実装":           "TECH",
+  "報告・定例":         "BRIDGE",
+  "調整・相談":         "BRIDGE",
+  "集計":               "DATA",
+  "資料・スライド作成": "MARKETING",
+  "AIリライト運用":     "TECH",
+  "プロジェクト分解":   "PM",
+  // 本人指定（2026-08-15）。組織に向けて発信し足並みを揃える仕事として PM に寄せる。
+  // 2026-08-15 時点で Notion 側の選択肢には未反映。向こうに追加が必要。
+  "発信・共有":         "PM",
+} as const satisfies Record<string, SpecialtyKey>;
+
+// 領域 → 副軸。主軸と重複した場合は副軸なしとして扱う（`deriveStatuses`）。
+export const AREA_TO_SUB_STATUS = {
+  "SEO":      "MARKETING",
+  "MEO":      "MARKETING",
+  "店頭改善": "MARKETING",
+  "AI開発":   "TECH",
+  "その他":   null,
+} as const satisfies Record<string, SpecialtyKey | null>;
+
+/**
+ * フェーズ完了を 👑PM のクエストとして扱う（10_notion_schema.md §8.2）。
+ *
+ * 日々のタスク221件を調べたところ、PM が主軸になるのは「プロジェクト分解」だけで、
+ * 今年の主戦場の筆頭（00_profile.md §4）である PM がほぼ伸びない状態だった。
+ * PM の仕事は「タスクを実行すること」ではなく「タスクを設計し、人を動かし、
+ * 期日に着地させること」であり、タスク行ではなく**フェーズの側**に現れるため。
+ *
+ * 難易度は配下タスク数から決める。`見積工数` は221件すべて未入力で使えない（実測）。
+ */
+export const PHASE_DIFFICULTY_BY_CHILD_COUNT = [
+  { maxChildren: 2,        difficulty: "D2" },
+  { maxChildren: 5,        difficulty: "D3" },
+  { maxChildren: 10,       difficulty: "D4" },
+  { maxChildren: Infinity, difficulty: "D5" },
+] as const;
+
+/** 期日内に着地したフェーズの完遂度。遅延した場合はこの値に下げる。 */
+export const PHASE_COMPLETION = { onTime: 1.0, late: 0.7 } as const;
+
 // ── HP（06_penalty.md §2）
 export const HP_MAX = 100;
 export const HP_MIN = 0;
