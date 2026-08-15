@@ -10,23 +10,33 @@
 作成日: 2026-08-09
 
 ## 進行中
-- [ ] **Wave 6 完了。Wave 7（Issue #20〜#22）の着手指示待ち**
-  - 状態: Wave 6 の全8 Issue（#12〜#19）+ 各種指摘修正まで合体済み（`ee0b763`）。
-    `npm run verify` 通過 / Tests **153 passed / 7ファイル** / `check:cycles` 循環0件（madge 46ファイル）
+- [ ] **Wave 6 完了（レビュー指摘の修正込み）。Wave 7（Issue #20〜#22）の着手指示待ち**
+  - 状態: Wave 6 の全8 Issue（#12〜#19）+ ロットC のレビュー指摘7件の修正（#lotC-fix）まで
+    合体済み（`67c9f21`）。`npm run verify` 通過 / Tests **153 passed / 7ファイル** / 循環0件
   - **375px 実測（AC-13）は司令塔がタブごとに分離してブラウザで実施済み。**
     Tab1 / Tab2 / Tab3 とも、コンテナが `flex` でも **`grid`** でも `scrollWidth` **375**・
     はみ出し要素 **0件**（全 DOM 走査）
-  - Tab3 は凡例を**実際にクリック**して 3 → 4 → **10系列**の切替を確認。
-    最大10系列でも 375px で溢れない（凡例は `flex-wrap` で3行に折り返す）。
-    ヒートマップは `viewBox` + `width:100%` で親幅に追従（320→288 / 375→343 / 768→736）
+  - ロットC 指摘の修正を司令塔がブラウザで実測確認: 専門系列と既定系列の色距離が
+    0.078 → **0.155**（約2倍）、ヒートマップ全90セルに `role="img"` + 個別 `aria-label`、
+    凡例チップ5段階すべて視認可能
   - 次の一手: **Wave 7（#20 status-tab / #21 mission-tab / #22 growth-tab）**の着手指示を待つ。
     3 Issue は相互に独立・ファイル重複なしなので並列実行できる
+- [ ] **Wave 9（Issue #24）の配色監査で判断すること**
+  - 専門7系列**どうし**の隣接色距離は 0.078 → **0.052** に縮まった（帯を 25〜75% に狭めた副作用）。
+    既定2系列との判別は解消したが、専門どうしは判別しにくい。
+    「シアン〜バイオレットの単一色相帯に7段階を配る（赤・緑・黄を使えない）」という制約による
+    構造的限界。現状は NFR-4 に従い凡例が「色 + 絵文字 + キー名」で区別でき、
+    既定3系列＋個別トグルという使い方で緩和されている。
+    さらに分離するなら破線パターンやマーカー形状の併用が必要
 - [ ] **Wave 7 への申し送り（着手時に必ず worker へ伝えること）**
   1. **タブのコンテナに grid を使う場合は必ず `minmax(0,1fr)`。** 素の `1fr` や暗黙トラックだと
      grid アイテムの `min-width:auto` によりパネルが min-content 未満に縮めず横あふれが再発する
      （#overflow375b で実測。`docs/WORK_LOG/2026-08-15-overflow375b.md`）
   2. **`ActivityHeatmap` の `intensity` は呼び出し側が算出する契約。**
-     `HEATMAP_INTENSITY_STEPS`（5段階）へのマッピングを **Issue #22（`growth-tab.tsx`）で実装する**
+     `HEATMAP_INTENSITY_STEPS`（5段階）へのマッピングを **Issue #22（`growth-tab.tsx`）で実装する**。
+     司令塔の確認ページで `Math.ceil((gainedExp / max) * (steps - 1))` を使うと**値が上方に張り付き
+     セルがほぼ全部同じ濃さ**になった（`Math.floor(...) + 1` にすると階調が出た）。
+     濃度計算を `src/lib/` 側に置くか、閾値を `constants.ts` とどう対応させるかを着手時に決めること
   3. ロットA・ロットBで API が変わっている。`HeroHeader` は
      `totalLevel: number | null` / `totalTitle: string | null`、`UniqueSkillPanel` は
      `totalLevel: number | null` を追加で受け取り、`StatusRadar` は `centerSlot?: ReactNode`
