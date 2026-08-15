@@ -96,7 +96,11 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
       </svg>
 
       {/* 濃淡だけに頼らないための凡例（色 + テキスト）。5項目程度の固定幅チップのみで
-          375pxでも折り返す必要がないくらい短いが、念のため flex-wrap にしておく。 */}
+          375pxでも折り返す必要がないくらい短いが、念のため flex-wrap にしておく。
+          セル側は fill だけを fillOpacity で薄くし枠線（stroke）は不透明のままなのに対し、
+          凡例チップが要素全体の opacity を使っていると枠線ごと薄まり、最小段階（0.06）が
+          背景に対してほぼ不可視になっていた。チップも背景色だけを color-mix の透明度で
+          薄くし、枠線は border の不透明色のまま維持することで、セルと同じ見え方に揃える。 */}
       <ul className="mt-2 flex flex-wrap items-center gap-2 text-[13px] text-[color:var(--color-text-secondary)]">
         <li>少ない</li>
         {Array.from({ length: HEATMAP_INTENSITY_STEPS }, (_, step) => (
@@ -104,8 +108,7 @@ export function ActivityHeatmap({ days }: ActivityHeatmapProps) {
             <span
               className="inline-block h-3 w-3 rounded-[2px] border border-[color:var(--color-border-hairline)]"
               style={{
-                backgroundColor: "var(--color-accent-cyan)",
-                opacity: intensityToOpacity(step),
+                backgroundColor: `color-mix(in srgb, var(--color-accent-cyan) ${intensityToOpacity(step) * 100}%, transparent)`,
               }}
             />
           </li>
