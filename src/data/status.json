@@ -1,0 +1,19 @@
+{
+  "phase": "main",
+  "generation": 1,
+  "hp": 62,
+  "streak": 27,
+  "statuses": {
+    "INT": { "key": "INT", "exp": 1000, "measured": true, "expThreeMonthsAgo": 650 },
+    "TECH": { "key": "TECH", "exp": 700, "measured": true, "expThreeMonthsAgo": 400 },
+    "DATA": { "key": "DATA", "exp": 950, "measured": true, "expThreeMonthsAgo": 550 },
+    "MARKETING": { "key": "MARKETING", "exp": 300, "measured": true, "expThreeMonthsAgo": 200 },
+    "PM": { "key": "PM", "exp": 280, "measured": true, "expThreeMonthsAgo": 220 },
+    "BRIDGE": { "key": "BRIDGE", "exp": 150, "measured": true, "expThreeMonthsAgo": 90 },
+    "ENGLISH": { "key": "ENGLISH", "exp": 110, "measured": true, "expThreeMonthsAgo": 80 },
+    "LEARNING": { "key": "LEARNING", "exp": 700, "measured": true, "expThreeMonthsAgo": 450 },
+    "EXECUTION": { "key": "EXECUTION", "exp": 350, "measured": true, "expThreeMonthsAgo": 150 }
+  },
+  "debuffs": [],
+  "uniqueSkillActivations": 52
+}

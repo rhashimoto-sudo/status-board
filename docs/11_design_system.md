@@ -40,11 +40,12 @@
 | Text Primary | — | `#e6e9f2` | 本文 |
 | Text Secondary | — | `#9aa3b8` | 補助テキスト（コントラスト比 4.5:1 以上を確認済みの値を使う） |
 | Text Muted | — | `#6b7490` | 非活性・未解放（**本文には使わない**） |
-| HP Safe | Green | `#22c55e` | HP `> 50` |
-| HP Warn | Amber | `#f59e0b` | HP `> 25` |
-| HP Danger | Red | `#ef4444` | HP `<= 25`・期限切迫。**発光あり** |
+| HP Safe | Green | `#22c55e` | HP **71〜100** |
+| HP Warn | Amber | `#f59e0b` | HP **41〜70** |
+| HP Danger | Red | `#ef4444` | HP **0〜40**・期限切迫。**発光あり** |
 | Debuff | Violet | `#8b5cf6` | デバフバッジ |
-| Ghost | — | `rgba(139,92,246,0.25)` | レーダーの3ヶ月前ゴースト |
+| Ghost Fill | — | `rgba(139,92,246,0.25)` | レーダーの3ヶ月前ゴーストの塗り（`fillOpacity` と併用するためベース値としては0.25を保持。実際の塗りは `fillOpacity=0.08` で更に薄くする） |
+| Ghost Stroke | — | `rgba(139,92,246,0.6)` | レーダーの3ヶ月前ゴーストの**線**専用。深藍黒の背景・グリッド線（白 0.08）に対して破線が実際に視認できる不透明度まで塗りより引き上げている（Issue #radar-visibility B） |
 
 > **ルール**: 上記以外の色を追加しない。新しい意味を表現したくなったら、
 > **まず罫線・余白・タイポグラフィで解決できないかを検討する**（AC-12 の検証対象）。
@@ -109,10 +110,227 @@
 | 対象 | 発光 |
 |---|---|
 | カウントダウン（残り3日未満） | 赤 `#ef4444` のパルス |
-| HP バー（`hp <= 25` の危険域） | 赤 `#ef4444` のパルス |
+| HP バー（`hp <= 40` の危険域） | 赤 `#ef4444` のパルス |
 | その他すべて | **なし**（静的な色とボーダーのみ） |
 
 `prefers-reduced-motion: reduce` の場合、**パルスを停止し静的な赤**にする。
+
+---
+
+## 6.1 背景意匠（system window 風）
+
+> Wave 9 の受け入れ条件 AC-14（`box-shadow` の出現箇所がカウントダウンと HP 危険域の2つだけ
+> であること）を維持したまま、深い藍黒のパネル面・微細な質感・縁に走るシアンの光を出すための
+> 背景装飾。`src/app/globals.css` の `body` / `body::before` / `body::after` にのみ実装し、
+> コンポーネント側（`src/components/`）には `#` 直書き・`box-shadow` を一切追加しない。
+
+### 追加した CSS 変数（`@theme`）
+
+| 変数名 | 値 | 用途 |
+|---|---|---|
+| `--color-bg-grid-line` | `rgba(34, 211, 238, 0.05)` | 背景の微細グリッド線・スキャンラインの帯色（シアンの極低不透明度） |
+| `--color-bg-vignette` | `rgba(5, 6, 10, 0.6)` | 四隅を沈めるビネットの終端色（背景トーンの濃色） |
+| `--color-bg-edge-cyan` | `rgba(34, 211, 238, 0.18)` | ビューポート上端の縁の光（シアン側） |
+| `--color-bg-edge-violet` | `rgba(139, 92, 246, 0.14)` | ビューポート下端の縁の光（バイオレット側） |
+
+いずれも既存の `--color-accent-cyan` / `--color-accent-violet` と同じ色相を低不透明度で使うのみで、
+新しい色相は追加していない。
+
+### 使用した手法と適用先
+
+| 手法 | 適用先 | 実装 |
+|---|---|---|
+| 微細グリッド | `body` の背景（ページ全体） | `linear-gradient` 2本（縦横）を `48px 48px` タイルで重ねた罫線。パネル面の罫線ベースの構造表現を背景にも延長する意匠 |
+| ビネット | `body` の背景 | `radial-gradient(ellipse at center, transparent 55%, var(--color-bg-vignette) 100%)` で四隅のみをわずかに沈め、中央のパネル群に視線を集める |
+| ノイズ | `body` の背景（最背面レイヤー） | `feTurbulence` の SVG data URI（外部ファイル・CDN不使用）。`feColorMatrix` の alpha を `0.03` に直接焼き込んだ極薄の粒状テクスチャ。CSS変数化はSVG文字列がリテラルであるため不可（ドキュメントに数値を明記） |
+| 縁の光 | `body::before`（fixed, `inset: 0`） | 上端をシアン・下端をバイオレットにフェードする `linear-gradient` の帯のみ。**`box-shadow` は使わない**（下記参照） |
+| スキャンライン | `body::after`（fixed, `inset: 0`） | 高さ200pxの帯を `background-position` アニメーションで縦方向にゆっくり流す（14s linear infinite）。不透明度 `0.25` |
+
+### なぜ `box-shadow` を使わないのか
+
+`CLAUDE.md` と本ドキュメント §6 のルール「発光は『カウントダウン』と『HP危険域』の2箇所のみ」を
+維持するため。Wave 9 の AC-14 は `grep -rn "box-shadow" src/` の出現箇所が
+`@keyframes danger-pulse`（2箇所）・`.danger-glow`（1箇所）・`prefers-reduced-motion` の
+上書き（1箇所）の**計4行のみ**であることを検証する。背景の「縁の光」「近未来感」はすべて
+`background`（`linear-gradient` / `radial-gradient`）と `opacity` のみで表現し、
+`box-shadow` プロパティを新規に一切追加していない（grep で4行のまま変化しないことを確認済み）。
+
+### `prefers-reduced-motion: reduce` での挙動
+
+スキャンライン（`body::after`）のみアニメーションを持つ。`prefers-reduced-motion: reduce` では
+`animation: none` に加えて `opacity: 0` にし、静止した帯すら表示しない（C-16）。
+グリッド・ビネット・ノイズ・縁の光（`body::before`）はいずれも静的で、そもそもアニメーションを
+持たないため対応不要。
+
+### コントラストを担保する前提
+
+- すべての背景装飾は `body` の背景（最背面）にのみ適用し、`z-index: -1` で本文コンテンツの
+  背後に固定する。パネル（`Panel` コンポーネント）は `--color-surface`（`#11131d`）の
+  不透明な背景を持つため、パネル内のテキストの上にはこれらの装飾が一切重ならない
+- 装飾が見える範囲はページ余白（パネル間・パネル外）のみであり、その不透明度は
+  グリッド線・スキャンラインで `0.05`、ノイズで `0.03`、縁の光で `0.18` 以下と、
+  いずれも本文コントラストへ影響しない極低不透明度に抑えている
+- `src/components/status/skill-emblem.tsx` の `MAX_GLOW_OPACITY = 0.5`（直前のコントラスト是正）は
+  未変更。本Issueの背景意匠はコンポーネント側に一切変更を加えていないため、この是正を打ち消さない
+
+### 375px でのレイアウトへの影響
+
+`body::before` / `body::after` はいずれも `position: fixed` かつ `inset: 0` の疑似要素であり、
+ドキュメントの通常フローに参加しない（スクロール幅に加算されない）。`background-attachment: fixed`
+を含め、固定 px 幅の要素を一切追加していないため、375px での横スクロールは発生しない（AC-13 維持）。
+
+---
+
+## 6.2 パネルの質感強化（Issue #panel-skin）
+
+> `src/components/ui/panel.tsx` は全パネル共通部品。デザインレビューで採用された3件を実装した。
+> box-shadow は新規に増やさず、すべて `background` / `border-color` のみで表現する（AC-14 維持）。
+
+### 追加した CSS 変数（`@theme`）
+
+| 変数名 | 値 | 用途 |
+|---|---|---|
+| `--color-panel-top-glow` | `rgba(34, 211, 238, 0.045)` | パネル面の上辺だけを薄く光らせる縦グラデーションの起点色 |
+| `--color-panel-edge-top` | `rgba(34, 211, 238, 0.22)` | パネル外枠の上辺だけに使う `border-top-color`（既存の `--color-border-bracket`（0.35・角ブラケット用）とは意図的に不透明度を分離） |
+
+背景色の階調（`#141726` 相当 / `#11131d` 相当 / `#0a0b12` 相当）は新規トークンを追加せず、
+既存の `--color-surface-raised` / `--color-surface` / `--color-bg` をそのまま再利用した。
+
+### 1. パネル面のグラデーション構成（`.panel-surface`）
+
+2層の `background` を重ねる。
+
+| 層 | 役割 |
+|---|---|
+| 上層 `linear-gradient(180deg, --color-panel-top-glow 0%, transparent 42%)` | 上辺のみシアンの微光を受けているように見せる。42% で完全に透明になり本文には掛からない |
+| 下層 `linear-gradient(160deg, --color-surface-raised 0%, --color-surface 55%, --color-bg 100%)` | パネル面自体の階調（左上が明るく右下に向けて沈む） |
+
+外枠は `border: 1px solid --color-border-hairline` を基本とし、`border-top-color` のみ
+`--color-panel-edge-top` に差し替えて上辺だけ光を受けている印象を作る。9パネルが縦に並んだとき
+「上辺が薄く光る板が積層している」ように見える。
+
+### 2. ブラケット装飾の仕様
+
+- サイズ: `w-3 h-3`（12px）→ **`w-4 h-4`（16px）** に拡大
+- 太さ: `border-*-2` → **`border-*-[1.5px]`** に変更（各辺 1.5px 相当）
+- 色: 既存の `--color-border-bracket`（`rgba(34,211,238,0.35)`）をそのまま流用（新規トークン不要）
+- 追加装飾: 上辺の左右ブラケットの内側（`top-0 left-4` / `top-0 right-4`）から水平に **24px**
+  （`w-6`）のシアングラデーション線（`bg-gradient-to-r` / `bg-gradient-to-l`、起点は
+  `--color-border-bracket`、終点 `transparent`）を追加し「窓が開いている」印象を強化する
+- これらの線・拡大したブラケットはすべて `pointer-events-none` の `absolute` 配置で、
+  `Panel` の `relative` コンテナ内に収まる。ドキュメントの通常フローに参加せず、
+  375px でも横スクロールを発生させない（AC-13 維持）
+
+### 3. パネル見出しのタイポグラフィ
+
+| 項目 | 変更前 | 変更後 |
+|---|---|---|
+| サイズ | 18px | **11px** |
+| ウェイト | 600 | 600（変更なし） |
+| 行間 | 1.3 | `leading-none` |
+| 字間 | なし | **`tracking-[0.18em]`** |
+| 変換 | なし | **`uppercase`** |
+| 色 | `--color-text-primary`（`#e6e9f2`） | **`--color-text-secondary`（`#9aa3b8`）** |
+
+見出しは情報ではなくラベルであるため、本文（TOTAL Lv の数値など）と同格の白テキストから
+1段階トーンを落とし、視線が本体データに集まるようにした。
+
+**コントラスト比の実測値**: `--color-text-secondary`（`#9aa3b8`）を `--color-surface`
+（`#11131d`、パネル面のベース色相当）の上に置いた場合の相対輝度比を WCAG の計算式で算出すると
+**約 7.32:1**。11px（小サイズ扱い、AA 基準 4.5:1）に対して十分な余裕があるため、
+サイズはそのまま 11px を採用し、色トークンの変更も行わなかった。
+
+見出し直下の区切り線は `.panel-heading-divider` として新設し、単色の hairline から
+「左だけシアン」のグラデーション（`linear-gradient(90deg, --color-border-bracket 0%,
+--color-border-hairline 28%, transparent 100%)`）に変更した。
+
+### `unique-skill-panel.tsx` / `balance-meter.tsx` への影響確認
+
+両ファイルは `Panel` の `heading` に `<span>🧬 固有スキル</span>` / `<span>⚖️ 歪みメーター</span>`
+という単純な絵文字+テキストしか渡しておらず、見出しの文字装飾（サイズ・字間・色）はすべて
+`Panel` 側の共通スタイルに委ねている。今回のタイポグラフィ変更は両パネルにも一様に適用されるが、
+これは意図した挙動（全パネル共通のシステムラベル化）であり、両ファイル自体への変更は行っていない。
+レイアウト崩れ（折り返し・はみ出し）が起きないことを目視・`npm run verify` で確認済み。
+
+### なぜ `box-shadow` を使わないのか（再掲）
+
+AC-14（`grep -rn "box-shadow" src/` の出現箇所がカウントダウンと HP 危険域の2つだけであること）と
+「発光はカウントダウンと HP 危険域のみ」の制約（§6）を維持するため。パネル面の質感・ブラケットの
+拡大・見出しの弱色化はいずれも `background` / `border-color` / `color` のみで実現しており、
+`box-shadow` を新規に一切追加していない（grep で4行のまま変化しないことを確認済み）。
+
+---
+
+## 6.3 レーダー中心紋章の可視性是正（Issue #radar-visibility A）
+
+> `status-radar.tsx` の《構造化》紋章が Lv2〜3 の軸頂点を覆い隠していた問題の是正。
+> ゴースト系列の是正（Issue #radar-visibility B）は本節末尾に追記する。
+
+### 紋章（`src/components/status/skill-emblem.tsx`）
+
+| 項目 | 値 |
+|---|---|
+| サイズ | `h-12 w-12`（**48px**、直径） |
+| レイヤー順 | `status-radar.tsx` の相対コンテナに `isolation: isolate` を付け、チャート側を
+`position: relative; z-index: 10` で包み、紋章（`centerSlot`）側を `position: absolute; z-index: 0`
+にする。**DOM 順の入れ替えではなく、`isolate` + 明示的な `z-index` で重なりを固定する**（下記参照） |
+| 表示内容 | 解放済み: `Lv N` のみ（`《構造化》` の文字ラベルは削除。詳細は `unique-skill-panel.tsx` に委譲）。
+未解放: `?` の記号のみ |
+| `aria-label` | 解放済み: `《構造化》 Lv N`、未解放: `《構造化》: 覚醒後に解放`（視覚要素を削っても代替テキストとしてスキル名を保持。NFR-4） |
+| 塗り | `color-mix(in srgb, var(--color-accent-violet) N%, transparent)`（**`--color-surface` との不透明混合から透明混合に変更**。下地のレーダーが常に透ける） |
+| `MAX_GLOW_OPACITY` | `0.5` → **`0.22`** に変更。塗りベースを透明にしたことでコントラストの前提が変わったため再計算した（下記） |
+
+**なぜ DOM 順の入れ替えだけでは効かないか**: `ResponsiveContainer` の外側 `div` は
+`width` / `height` / `minWidth` / `minHeight` / `maxHeight` のみを指定し、`position` を持たない
+非 positioned のインフロー要素（`node_modules/recharts/lib/component/ResponsiveContainer.js`）。
+一方 `centerSlot` のラッパーは `absolute`（positioned, `z-index: auto`）。CSS の絵付け順
+（CSS 2.1 Appendix E）では、同一スタッキングコンテキスト内で「非 positioned のインフロー子孫」
+（ステップ4）は「`z-index: auto` の positioned 子孫」（ステップ8）より**先に**塗られる＝下になる。
+つまり absolute な紋章は、兄弟要素としての DOM 順に関わらず常にチャートより**上**に描かれる。
+そのため紋章側を先に置いても効果がなかった。
+
+**採用した解決策**: 相対コンテナに `isolation: isolate` を付けて新しいスタッキングコンテキストを作り、
+チャート側を `position: relative; z-index: 10`、紋章側を `position: absolute; z-index: 0` にする。
+これで両者ともこのコンテナ内で「`z-index` を持つ positioned 要素」として明示的に比較され、
+`z-index: 10 > 0` によりチャートが確実に紋章の上に描かれる。
+**負の `z-index`（`-z-10` 等）は使わない**: 親の相対コンテナは `z-index: auto` のままではスタッキング
+コンテキストを作らないため、負の `z-index` を使うと祖先（`Panel`）の背景の裏側に回り込み紋章自体が
+見えなくなる恐れがある。`isolate` + 正の `z-index` の組み合わせのみを使う。
+
+**半径比（頂点が視覚的に隠れなくなる根拠）**: `outerRadius="55%"`、375px 幅時のレーダー半径は約103px。
+紋章半径は 48px/2=24px で、レーダー半径に対し約23%（Lv2.3相当）。旧仕様（64px・不透明・チャートより
+常に上に描画されるレイヤー）では半径の約31%（Lv3.1相当）を不透明に覆い、Lv2〜3の頂点
+（BRIDGE・ENGLISH・PM・MARKETING）が隠れていた。新仕様では (1) `isolate` + `z-index` により
+チャートが紋章より確実に上のレイヤーになったため、ポリゴン・グリッド・軸ラベルは常に紋章の**上**を通り、
+どの半径の頂点も視覚的に隠れない。(2) 加えて紋章自体の半径も24pxまで縮小し、視覚的な主張も下げた。
+
+**コントラスト比の再計算（WCAG AA 4.5:1 以上を確認）**: 紋章が下地レイヤーに来たことで、`Lv N` ラベルの
+最悪の背景は「紋章の塗り（`--color-accent-violet` を `MAX_GLOW_OPACITY=0.22` で `--color-surface`（`#11131d`）に
+重ねた色」の上に、さらに「現在値ポリゴンの塗り（`--color-accent-cyan` を `fillOpacity=0.22` で重ねた色）」が
+乗った状態。合成計算（sRGB 加重平均 → 相対輝度）:
+
+1. `--color-surface #11131d`(17,19,29) に violet(139,92,246) を 22% 合成 → 約 (43.8, 35.1, 76.7)
+2. その上に cyan(34,211,238) を `fillOpacity 0.22` で合成 → 約 (41.7, 73.8, 112.2)
+3. この背景（相対輝度 L≈0.0653）に対し `Lv N` のシアン文字（`#22d3ee`、相対輝度 L≈0.531）の
+   コントラスト比 = (0.531+0.05)/(0.0653+0.05) ≈ **5.04:1**（AA 基準 4.5:1 を上回る）
+
+`MAX_GLOW_OPACITY` を上げるほど手順1の合成が明るくなり背景輝度が上がって比率が下がるため、
+0.22 を上限として維持すること。
+
+### ゴースト系列（`src/components/status/status-radar.tsx`）（Issue #radar-visibility B）
+
+ゴースト（3ヶ月前）の破線が深藍黒の背景・グリッド線（白 0.08）とほぼ同明度で視認できなかった
+問題を、線用トークン `--color-ghost-stroke`（`rgba(139,92,246,0.6)`）を新設して是正した。
+
+| 系列 | stroke | strokeWidth | strokeDasharray | fill | fillOpacity | dot |
+|---|---|---|---|---|---|---|
+| 3ヶ月前（ゴースト） | `var(--color-ghost-stroke)`（`rgba(139,92,246,0.6)`） | 1.5 | `5 4` | `var(--color-accent-violet)` | 0.08 | なし |
+| 現在 | `var(--color-accent-cyan)` | 2 | なし | `var(--color-accent-cyan)` | 0.22 | `{ r: 2.5, fill: var(--color-accent-cyan) }` |
+
+役割分担は「線の太さ（2 vs 1.5）で主従」「不透明度（stroke 0.6 vs 塗りの0.25という
+既存の Ghost Fill トークンより線を濃くする、かつ fillOpacity 0.22 vs 0.08）で時間軸」を表現する。
+`dot` は現在値系列にのみ付け、色を増やさずシアンのみを使う。凡例スウォッチも同じ
+`--color-ghost-stroke` / `fillOpacity 0.08` 相当に合わせて更新した。
 
 ---
 
