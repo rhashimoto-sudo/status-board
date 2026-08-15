@@ -1,6 +1,7 @@
 import { Panel } from "@/components/ui/panel";
 import { StatValue } from "@/components/ui/stat-value";
 import { EXP_PENALTY, HP_PENALTY } from "@/lib/constants";
+import { weekdayIndexInTimeZone } from "@/lib/datetime";
 import type { DailyQuest } from "@/lib/types";
 
 type DailyQuestsProps = {
@@ -9,8 +10,22 @@ type DailyQuestsProps = {
 
 const WEEKDAY_LABELS = ["日", "月", "火", "水", "木", "金", "土"] as const;
 
+// `new Date(iso).getDay()` はランタイムのローカルタイムゾーンに依存し、ローカル（JST）開発と
+// Vercel の Node ランタイム（UTC）で曜日がずれるため使わない（レビュー指摘A）。
 function weekdayLabel(iso: string): string {
-  return `${WEEKDAY_LABELS[new Date(iso).getDay()]}曜日`;
+  return `${WEEKDAY_LABELS[weekdayIndexInTimeZone(new Date(iso))]}曜日`;
+}
+
+// `lockedUntil` を過ぎていれば表示しない（レビュー指摘E）。5件が同じ値を持つ前提を置かず、
+// 複数の `lockedUntil` が異なりうる場合は最大値（＝最も遅く解除される日時）を使う。
+function nextSelectableLabel(dailies: readonly DailyQuest[], nowMs: number): string | null {
+  if (dailies.length === 0) return null;
+  const latestLockedUntil = dailies.reduce(
+    (latest, daily) => (daily.lockedUntil > latest ? daily.lockedUntil : latest),
+    dailies[0].lockedUntil,
+  );
+  if (new Date(latestLockedUntil).getTime() <= nowMs) return null;
+  return weekdayLabel(latestLockedUntil);
 }
 
 /**
@@ -20,7 +35,7 @@ function weekdayLabel(iso: string): string {
  */
 export function DailyQuests({ dailies }: DailyQuestsProps) {
   const remaining = dailies.filter((daily) => !daily.done).length;
-  const nextSelectableDay = dailies[0] ? weekdayLabel(dailies[0].lockedUntil) : null;
+  const nextSelectableDay = nextSelectableLabel(dailies, Date.now());
 
   return (
     <Panel
@@ -45,7 +60,9 @@ export function DailyQuests({ dailies }: DailyQuestsProps) {
       </ul>
 
       <div className="mt-4 border-t border-[color:var(--color-border-hairline)] pt-3 text-[13px] text-[color:var(--color-text-secondary)]">
-        {remaining === 0 ? (
+        {dailies.length === 0 ? (
+          <p>本日のデイリーはありません</p>
+        ) : remaining === 0 ? (
           <p>✓ 本日達成済み</p>
         ) : (
           <>

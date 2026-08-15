@@ -38,6 +38,12 @@ export type Quest = DailyQuest | GuerrillaQuest | Mission | Boss;
 
 export type DefeatEntry = {
   kind: Exclude<QuestKind, "daily">; name: string; date: string;
+  // 符号規約（司令塔確定・Wave 6 ロットB指摘D）: 現状のダミーデータは `hpDamage` を正の値
+  // （例 50）、`expDamage[].amount` を負の値（例 -90）で持っており、そのままでは符号が不統一。
+  // データ側の符号は矯正せず、表示側（`defeat-log.tsx`）が両方とも `-Math.abs(...)` で
+  // 「ダメージ量」として正規化してから描画する契約とする。将来どちらの符号でデータが来ても
+  // 表示は必ず「-数値」になり、`expDamage` が正の値で「増加」に見えることはない。
+  // データ側で符号を統一する場合はこの型・コメントも合わせて見直すこと。
   hpDamage: number; expDamage: readonly { key: StatusKey; amount: number }[];
   revengeable: boolean;
 };

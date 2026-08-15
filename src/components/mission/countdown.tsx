@@ -56,6 +56,18 @@ export function Countdown({ deadline }: CountdownProps) {
   }
 
   const remainingMs = new Date(deadline).getTime() - now;
+
+  // 解釈不能な deadline（`Number.isNaN`）は `NaN日 NaN:NaN:NaN` を出さず、
+  // マウント前と同じプレースホルダーにフォールバックする（発光もしない）。
+  if (Number.isNaN(remainingMs)) {
+    return (
+      <div className="inline-flex items-center gap-2">
+        <span aria-hidden="true">⏳</span>
+        <StatValue>--日 --:--:--</StatValue>
+      </div>
+    );
+  }
+
   const isExpired = remainingMs <= 0;
   const isUrgent = !isExpired && remainingMs < URGENT_GLOW_WITHIN_DAYS * MS_PER_DAY;
 

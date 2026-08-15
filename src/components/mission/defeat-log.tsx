@@ -61,12 +61,17 @@ function DefeatRow({ defeat }: { defeat: DefeatEntry }) {
 
       <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[13px]">
         <span className="text-[color:var(--color-text-secondary)]">
-          ♥HP <StatValue className="text-[color:var(--color-hp-danger)]">-{defeat.hpDamage}</StatValue>
+          ♥HP{" "}
+          <StatValue className="text-[color:var(--color-hp-danger)]">
+            -{Math.abs(defeat.hpDamage)}
+          </StatValue>
         </span>
         {defeat.expDamage.map((exp) => (
           <span key={exp.key} className="text-[color:var(--color-text-secondary)]">
             <span aria-hidden="true">{STATUS_ICONS[exp.key]}</span> {exp.key}{" "}
-            <StatValue className="text-[color:var(--color-hp-danger)]">{exp.amount}</StatValue>
+            <StatValue className="text-[color:var(--color-hp-danger)]">
+              -{Math.abs(exp.amount)}
+            </StatValue>
           </span>
         ))}
       </div>
