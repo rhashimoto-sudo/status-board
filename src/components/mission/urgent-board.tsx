@@ -39,7 +39,7 @@ export function UrgentBoard({ bosses, guerrillas }: UrgentBoardProps) {
             >
               <div className="flex min-w-0 items-center gap-2">
                 <span aria-hidden="true">{entry.kind === "boss" ? "👹" : "⚡"}</span>
-                <span className="truncate">{entry.quest.title}</span>
+                <span className="min-w-0 flex-1 truncate">{entry.quest.title}</span>
                 <span className="text-[color:var(--color-text-secondary)]">
                   {entry.kind === "boss" ? "ボス" : `ゲリラ（${entry.quest.difficulty}）`}
                 </span>
