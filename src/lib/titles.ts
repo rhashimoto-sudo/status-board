@@ -51,8 +51,11 @@ export const TOTAL_TITLES: readonly string[] = [
   "クロスファンクショナル人材", "テクノロジスト", "ビジネスアーキテクト", "AIビジネスアーキテクト", "トランスフォーメーションリーダー",
 ];
 
+// 03_status_system.md §3.2「総合称号 = TOTAL_TITLES[floor(TOTAL Lv) - 1]」/
+// 09_dashboard_spec.md:59「totalTitleFor(floor(totalLv))」が正典。
+// 非整数 Lv（例: 3.9）はテーブルの整数インデックスに floor で丸めてからクランプする。
 function clampLevel(level: number): number {
-  return Math.min(10, Math.max(1, level));
+  return Math.floor(Math.min(10, Math.max(1, level)));
 }
 
 export function titleFor(key: StatusKey, level: number): string {

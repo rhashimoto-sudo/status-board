@@ -92,6 +92,29 @@ describe("titles.ts", () => {
     expect(totalTitleFor(11)).toBe(totalTitleFor(10));
   });
 
+  it("非整数 Lv を floor して称号を返す（03_status_system.md §3.2 / 09_dashboard_spec.md:59）", () => {
+    // totalTitleFor(3.9) は floor(3.9) = 3 → Lv3 の称号（undefined にならない）
+    expect(totalTitleFor(3.9)).toBe(totalTitleFor(3));
+    expect(totalTitleFor(3.9)).toBeDefined();
+    expect(totalTitleFor(3.9)).not.toBe("undefined");
+
+    // titleFor("INT", 4.7) は floor(4.7) = 4 → Lv4 の称号
+    expect(titleFor("INT", 4.7)).toBe(titleFor("INT", 4));
+    expect(titleFor("INT", 4.7)).toBeDefined();
+  });
+
+  it("非整数 Lv の境界値（下限・上限）でも undefined にならない", () => {
+    expect(totalTitleFor(1.0)).toBe(totalTitleFor(1));
+    expect(totalTitleFor(0.5)).toBe(totalTitleFor(1));
+    expect(totalTitleFor(10.0)).toBe(totalTitleFor(10));
+    expect(totalTitleFor(10.9)).toBe(totalTitleFor(10));
+
+    expect(titleFor("INT", 1.0)).toBe(titleFor("INT", 1));
+    expect(titleFor("INT", 0.5)).toBe(titleFor("INT", 1));
+    expect(titleFor("INT", 10.0)).toBe(titleFor("INT", 10));
+    expect(titleFor("INT", 10.9)).toBe(titleFor("INT", 10));
+  });
+
   it("重複称号がリネームされずそのまま残っている（意図的な重複）", () => {
     // 「学習者」= INT Lv1 = LEARNING Lv1
     expect(titleFor("INT", 1)).toBe("学習者");
