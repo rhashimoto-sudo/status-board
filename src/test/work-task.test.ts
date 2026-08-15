@@ -8,9 +8,14 @@ import {
 } from "@/lib/work-task";
 import {
   AREA_TO_SUB_STATUS,
+  DAILY_EXPLORATION_SLOT_COUNT,
+  DAILY_QUEST_COUNT,
   PHASE_COMPLETION,
+  STRUCTURE_MIN_INVOLVED,
   WORK_TYPE_TO_MAIN_STATUS,
 } from "@/lib/constants";
+import type { DailyQuest } from "@/lib/types";
+import quests from "@/data/quests.json";
 
 describe("deriveStatuses", () => {
   it("主軸は作業種別から決まる（領域は主軸に影響しない）", () => {
@@ -186,5 +191,49 @@ describe("実測フェーズ「口コミ促進」の再現", () => {
     expect(completed).toBe("2026-08-12");
     expect(phaseDifficulty(children.length)).toBe("D3");
     expect(phaseCompletion("2026-09-30", completed)).toBe(PHASE_COMPLETION.onTime);
+  });
+});
+
+// 生活基盤のデイリー（睡眠・運動・スマホ断ち）は9軸のどれでもない。
+// 以前 `toDailyQuest` が `MainStatus` 未設定を黙って TECH に寄せており、
+// 早起きしただけでレーダーの TECH が伸びる状態になっていた。その回帰を防ぐ。
+describe("生活基盤デイリーの契約", () => {
+  it("軸なしデイリーは main:null / involvedStatuses:[] / EXP 0 を保てる", () => {
+    const foundationDaily: DailyQuest = {
+      id: "x",
+      kind: "daily",
+      title: "朝6時に起きる",
+      main: null,
+      involvedStatuses: [],
+      expectedExp: 0,
+      done: false,
+      lockedUntil: "2026-08-10",
+      exploration: false,
+    };
+    expect(foundationDaily.main).toBeNull();
+    expect(foundationDaily.involvedStatuses).toEqual([]);
+    expect(foundationDaily.expectedExp).toBe(0);
+  });
+
+  it("《構造化》は発動しない（involvedStatuses が閾値未満）", () => {
+    expect([].length).toBeLessThan(STRUCTURE_MIN_INVOLVED);
+  });
+
+  it("静的ダミーの5個: 軸ありは EXP>0、軸なしは EXP 0 で一貫している", () => {
+    for (const daily of quests.dailies as unknown as DailyQuest[]) {
+      if (daily.main === null) {
+        expect(daily.expectedExp).toBe(0);
+        expect(daily.involvedStatuses).toEqual([]);
+      } else {
+        expect(daily.expectedExp).toBeGreaterThan(0);
+        expect(daily.involvedStatuses).toContain(daily.main);
+      }
+    }
+  });
+
+  it("静的ダミーの5個: 探索枠はちょうど1個（DAILY_EXPLORATION_SLOT_COUNT）", () => {
+    const dailies = quests.dailies as unknown as DailyQuest[];
+    expect(dailies).toHaveLength(DAILY_QUEST_COUNT);
+    expect(dailies.filter((d) => d.exploration)).toHaveLength(DAILY_EXPLORATION_SLOT_COUNT);
   });
 });

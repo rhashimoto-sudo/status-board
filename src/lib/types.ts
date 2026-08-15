@@ -32,8 +32,17 @@ export type QuestBase = {
 /**
  * `exploration` は「未知に触れること自体が完了条件」の探索枠（00_profile.md §6.4）。
  * デイリー5個のうち必ず1個がこれになる（`DAILY_EXPLORATION_SLOT_COUNT`）。成果を問わない。
+ *
+ * `main` が `null` のものは**生活基盤のデイリー**（睡眠・運動・スマホ断ちなど）。
+ * 9軸はすべて能力軸であり、生活習慣はどこに入れても嘘になるため軸を持たせない
+ * （`main` を埋めると、早起きしただけでレーダーの該当軸が伸びて形が意味を失う）。
+ * EXP は 0 だが、**ストリーク経由で ⚔️EXECUTION に自動導出される**（03_status_system.md §1.1）。
+ * デイリーの本体は EXP ではなくストリークなので、これで機能は落ちない。
  */
-export type DailyQuest    = QuestBase & { kind: "daily"; done: boolean; lockedUntil: string; exploration: boolean };
+export type DailyQuest    = Omit<QuestBase, "main"> & {
+  kind: "daily"; main: MainStatusKey | null;
+  done: boolean; lockedUntil: string; exploration: boolean;
+};
 export type GuerrillaQuest= QuestBase & { kind: "guerrilla"; deadline: string; difficulty: Difficulty };
 export type ChildQuest    = { id: string; title: string; done: boolean };
 /** `difficulty` は完遂時の HP 回復量を決める（`HP_RECOVERY_DIVISOR_BY_DIFFICULTY`）。 */

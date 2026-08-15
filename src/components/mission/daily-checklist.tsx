@@ -103,8 +103,20 @@ export function DailyChecklist({ initial }: DailyChecklistProps) {
                   </span>
                 )}
               </span>
+              {/*
+                生活基盤のデイリー（main が null）は軸も EXP も持たない。ここに「+0」と
+                出すと「やっても意味がない」に見えるが、実際はストリーク経由で
+                ⚔️EXECUTION に効いている。数値ではなく「土台」と表示してそれを示す
+                （ステータス一覧の区切りでも同じ語を使っている）。
+              */}
               <span className="whitespace-nowrap text-[13px] text-[color:var(--color-text-secondary)]">
-                {row.main} +<StatValue>{row.expectedExp}</StatValue>
+                {row.main === null ? (
+                  <span className="text-[color:var(--color-text-muted)]">土台 → ⚔️</span>
+                ) : (
+                  <>
+                    {row.main} +<StatValue>{row.expectedExp}</StatValue>
+                  </>
+                )}
               </span>
             </label>
           </li>

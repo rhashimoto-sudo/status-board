@@ -64,15 +64,18 @@ export function currentWeekOf(now: Date = new Date()): string {
   return dateKeyInTimeZone(monday, DISPLAY_TIME_ZONE);
 }
 
-/** Notion の1行を `DailyQuest` に写す。EXP は Notion に持たせず、この層で確定させる。 */
+/** Notion の1行を `DailyQuest` に写す。 */
 function toDailyQuest(page: NotionPage, weekOf: string): DailyQuest {
-  const main = (selectName(page.properties.MainStatus) ?? "TECH") as MainStatusKey;
+  // `MainStatus` 未設定は**生活基盤のデイリー**（軸なし）。既定の軸に寄せてはならない。
+  // 以前はここで `?? "TECH"` としていたが、早起き・運動が黙って TECH に化けて
+  // レーダーの形が壊れる。「軸が無い」ことをそのまま null で表す。
+  const main = selectName(page.properties.MainStatus) as MainStatusKey | null;
   return {
     id: page.id,
     kind: "daily",
     title: plainText(page.properties["名前"]),
     main,
-    involvedStatuses: [main],
+    involvedStatuses: main === null ? [] : [main],
     expectedExp: page.properties.ExpectedExp?.number ?? 0,
     done: selectName(page.properties.Status) === "done",
     // 週中はロック。次に選び直せるのは翌週の月曜。

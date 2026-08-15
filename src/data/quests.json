@@ -16,10 +16,10 @@
     {
       "id": "daily-2",
       "kind": "daily",
-      "title": "コードを30分以上書く（何でもよい）",
-      "main": "TECH",
+      "title": "朝30分以上で開発や思考整理をする",
+      "main": "INT",
       "involvedStatuses": [
-        "TECH"
+        "INT"
       ],
       "expectedExp": 15,
       "done": true,
@@ -29,12 +29,10 @@
     {
       "id": "daily-3",
       "kind": "daily",
-      "title": "英語の技術文書を10分読む",
-      "main": "ENGLISH",
-      "involvedStatuses": [
-        "ENGLISH"
-      ],
-      "expectedExp": 8,
+      "title": "ベッドにいる時と朝にスマホを触らない",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": false,
       "lockedUntil": "2026-08-17T00:00:00+09:00",
       "exploration": false
@@ -42,12 +40,10 @@
     {
       "id": "daily-4",
       "kind": "daily",
-      "title": "数値を1つ見て気づきを1行残す",
-      "main": "DATA",
-      "involvedStatuses": [
-        "DATA"
-      ],
-      "expectedExp": 8,
+      "title": "朝6時に起きる",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": false,
       "lockedUntil": "2026-08-17T00:00:00+09:00",
       "exploration": false
@@ -55,12 +51,10 @@
     {
       "id": "daily-5",
       "kind": "daily",
-      "title": "今日やることを朝に3つ決める",
-      "main": "PM",
-      "involvedStatuses": [
-        "PM"
-      ],
-      "expectedExp": 5,
+      "title": "朝15分のランニングをする",
+      "main": null,
+      "involvedStatuses": [],
+      "expectedExp": 0,
       "done": true,
       "lockedUntil": "2026-08-17T00:00:00+09:00",
       "exploration": false
