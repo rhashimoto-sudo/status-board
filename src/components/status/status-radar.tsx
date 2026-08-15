@@ -115,61 +115,71 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
     <div className="w-full">
       {/* centerSlot をレーダー中心に絶対配置するための相対コンテナ（A-4）。
           ResponsiveContainer は aspect=1 の正方形なので、中心は常に 50%/50%。
-          centerSlot は DOM 順で ResponsiveContainer より「前」に置く（A-1）。
-          兄弟要素は DOM 順が描画順（後勝ち）になるため、紋章を先に置き
-          チャート（SVG、背景透明）を後に重ねると、ポリゴン・グリッド・軸ラベルが
-          常に紋章の上に描画される。これにより Lv2〜3 の頂点が紋章に隠れなくなる。 */}
-      <div className="relative w-full">
+          `isolation: isolate` でこのコンテナに新しいスタッキングコンテキストを作り、
+          紋章（absolute, z-0）とチャート（relative, z-10）の重なり順をこのコンテナ内に
+          閉じ込めて明示する（A-1）。
+          ResponsiveContainer の外側 div は `position` を持たない非 positioned のインフロー
+          要素であり（node_modules/recharts/lib/component/ResponsiveContainer.js）、DOM 順を
+          入れ替えるだけでは効果がない。CSS の絵付け順（CSS 2.1 Appendix E）では、同一
+          スタッキングコンテキスト内で「非 positioned のインフロー子孫」（ステップ4）は
+          「z-index: auto の positioned 子孫」（ステップ8）より先に塗られる＝下になるため、
+          absolute な紋章は DOM 順によらず常にチャートより上に描かれてしまう。
+          そこでチャート側を `relative z-10` として positioned にし、紋章側を `z-0` に
+          固定することで、紋章 z=0 < チャート z=10 の重なりを確定させる。
+          （負の z-index は使わない。祖先 Panel の背景の裏へ回り込み紋章が消える恐れがあるため。） */}
+      <div className="relative w-full isolate">
         {centerSlot && (
           <div
-            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            className="pointer-events-none absolute left-1/2 top-1/2 z-0 -translate-x-1/2 -translate-y-1/2"
             aria-hidden={false}
           >
             {centerSlot}
           </div>
         )}
-        <ResponsiveContainer width="100%" aspect={1}>
-          {/* outerRadius を 70% → 58% → 55% に縮小し、375px 幅でも軸ラベル
-              （🔥 LEARNING 等）が SVG 端でクリップされない余白を確保する（B-1）。
-              9軸は startAngle=90 から時計回り40°刻み（STATUS_ORDER順）で配置され、
-              各軸の水平オフセットは radius * cos(angle) で決まる。左端に最も寄るのは
-              LEARNING（角度170°、cos≈-0.985）で、半径を縮めるほど全軸のオフセットが
-              一様に中心へ寄るため、他8軸（📣 MARKETING・🧠 INT 含む）の既存の
-              クリップ解消の余白はむしろ広がる方向にしか動かない。 */}
-          <RadarChart data={rows} outerRadius="55%">
-            <PolarGrid stroke="var(--color-border-hairline)" />
-            <PolarAngleAxis
-              dataKey="key"
-              tick={<AxisTick labelByKey={labelByKey} />}
-            />
-            <PolarRadiusAxis
-              domain={[0, RADAR_MAX]}
-              tick={false}
-              axisLine={false}
-              tickCount={6}
-            />
-            <Radar
-              name="3ヶ月前"
-              dataKey="ghost"
-              stroke="var(--color-ghost-stroke)"
-              strokeWidth={1.5}
-              strokeDasharray="5 4"
-              fill="var(--color-accent-violet)"
-              fillOpacity={0.08}
-              isAnimationActive={false}
-            />
-            <Radar
-              name="現在"
-              dataKey="current"
-              stroke="var(--color-accent-cyan)"
-              strokeWidth={2}
-              fill="var(--color-accent-cyan)"
-              fillOpacity={0.22}
-              dot={{ r: 2.5, fill: "var(--color-accent-cyan)" }}
-              isAnimationActive={false}
-            />
-          </RadarChart>
-        </ResponsiveContainer>
+        <div className="relative z-10">
+          <ResponsiveContainer width="100%" aspect={1}>
+            {/* outerRadius を 70% → 58% → 55% に縮小し、375px 幅でも軸ラベル
+                （🔥 LEARNING 等）が SVG 端でクリップされない余白を確保する（B-1）。
+                9軸は startAngle=90 から時計回り40°刻み（STATUS_ORDER順）で配置され、
+                各軸の水平オフセットは radius * cos(angle) で決まる。左端に最も寄るのは
+                LEARNING（角度170°、cos≈-0.985）で、半径を縮めるほど全軸のオフセットが
+                一様に中心へ寄るため、他8軸（📣 MARKETING・🧠 INT 含む）の既存の
+                クリップ解消の余白はむしろ広がる方向にしか動かない。 */}
+            <RadarChart data={rows} outerRadius="55%">
+              <PolarGrid stroke="var(--color-border-hairline)" />
+              <PolarAngleAxis
+                dataKey="key"
+                tick={<AxisTick labelByKey={labelByKey} />}
+              />
+              <PolarRadiusAxis
+                domain={[0, RADAR_MAX]}
+                tick={false}
+                axisLine={false}
+                tickCount={6}
+              />
+              <Radar
+                name="3ヶ月前"
+                dataKey="ghost"
+                stroke="var(--color-ghost-stroke)"
+                strokeWidth={1.5}
+                strokeDasharray="5 4"
+                fill="var(--color-accent-violet)"
+                fillOpacity={0.08}
+                isAnimationActive={false}
+              />
+              <Radar
+                name="現在"
+                dataKey="current"
+                stroke="var(--color-accent-cyan)"
+                strokeWidth={2}
+                fill="var(--color-accent-cyan)"
+                fillOpacity={0.22}
+                dot={{ r: 2.5, fill: "var(--color-accent-cyan)" }}
+                isAnimationActive={false}
+              />
+            </RadarChart>
+          </ResponsiveContainer>
+        </div>
       </div>
       <ul className="mt-2 flex flex-wrap justify-center gap-4 text-[13px] text-[color:var(--color-text-secondary)]">
         <li className="flex items-center gap-2">

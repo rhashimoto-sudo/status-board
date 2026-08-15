@@ -271,18 +271,37 @@ AC-14（`grep -rn "box-shadow" src/` の出現箇所がカウントダウンと 
 | 項目 | 値 |
 |---|---|
 | サイズ | `h-12 w-12`（**48px**、直径） |
-| レイヤー順 | `status-radar.tsx` の `centerSlot` を **`ResponsiveContainer` より DOM 順で前**に配置。
-兄弟要素は後に置いたものが上に描画されるため、SVG チャート（背景透明）が常に紋章の**上**に重なる |
+| レイヤー順 | `status-radar.tsx` の相対コンテナに `isolation: isolate` を付け、チャート側を
+`position: relative; z-index: 10` で包み、紋章（`centerSlot`）側を `position: absolute; z-index: 0`
+にする。**DOM 順の入れ替えではなく、`isolate` + 明示的な `z-index` で重なりを固定する**（下記参照） |
 | 表示内容 | 解放済み: `Lv N` のみ（`《構造化》` の文字ラベルは削除。詳細は `unique-skill-panel.tsx` に委譲）。
 未解放: `?` の記号のみ |
 | `aria-label` | 解放済み: `《構造化》 Lv N`、未解放: `《構造化》: 覚醒後に解放`（視覚要素を削っても代替テキストとしてスキル名を保持。NFR-4） |
 | 塗り | `color-mix(in srgb, var(--color-accent-violet) N%, transparent)`（**`--color-surface` との不透明混合から透明混合に変更**。下地のレーダーが常に透ける） |
 | `MAX_GLOW_OPACITY` | `0.5` → **`0.22`** に変更。塗りベースを透明にしたことでコントラストの前提が変わったため再計算した（下記） |
 
-**レイヤー順で頂点が隠れなくなる理由（半径比）**: `outerRadius="55%"`、375px 幅時のレーダー半径は約103px。
-紋章半径は 48px/2=24px で、レーダー半径に対し約23%（Lv2.3相当）。旧仕様（64px・不透明・チャートより上のレイヤー）では
-半径の約31%（Lv3.1相当）を不透明に覆い、Lv2〜3の頂点（BRIDGE・ENGLISH・PM・MARKETING）が隠れていた。
-新仕様では (1) 紋章がチャートより下のレイヤーになったため、ポリゴン・グリッド・軸ラベルは常に紋章の**上**を通り、
+**なぜ DOM 順の入れ替えだけでは効かないか**: `ResponsiveContainer` の外側 `div` は
+`width` / `height` / `minWidth` / `minHeight` / `maxHeight` のみを指定し、`position` を持たない
+非 positioned のインフロー要素（`node_modules/recharts/lib/component/ResponsiveContainer.js`）。
+一方 `centerSlot` のラッパーは `absolute`（positioned, `z-index: auto`）。CSS の絵付け順
+（CSS 2.1 Appendix E）では、同一スタッキングコンテキスト内で「非 positioned のインフロー子孫」
+（ステップ4）は「`z-index: auto` の positioned 子孫」（ステップ8）より**先に**塗られる＝下になる。
+つまり absolute な紋章は、兄弟要素としての DOM 順に関わらず常にチャートより**上**に描かれる。
+そのため紋章側を先に置いても効果がなかった。
+
+**採用した解決策**: 相対コンテナに `isolation: isolate` を付けて新しいスタッキングコンテキストを作り、
+チャート側を `position: relative; z-index: 10`、紋章側を `position: absolute; z-index: 0` にする。
+これで両者ともこのコンテナ内で「`z-index` を持つ positioned 要素」として明示的に比較され、
+`z-index: 10 > 0` によりチャートが確実に紋章の上に描かれる。
+**負の `z-index`（`-z-10` 等）は使わない**: 親の相対コンテナは `z-index: auto` のままではスタッキング
+コンテキストを作らないため、負の `z-index` を使うと祖先（`Panel`）の背景の裏側に回り込み紋章自体が
+見えなくなる恐れがある。`isolate` + 正の `z-index` の組み合わせのみを使う。
+
+**半径比（頂点が視覚的に隠れなくなる根拠）**: `outerRadius="55%"`、375px 幅時のレーダー半径は約103px。
+紋章半径は 48px/2=24px で、レーダー半径に対し約23%（Lv2.3相当）。旧仕様（64px・不透明・チャートより
+常に上に描画されるレイヤー）では半径の約31%（Lv3.1相当）を不透明に覆い、Lv2〜3の頂点
+（BRIDGE・ENGLISH・PM・MARKETING）が隠れていた。新仕様では (1) `isolate` + `z-index` により
+チャートが紋章より確実に上のレイヤーになったため、ポリゴン・グリッド・軸ラベルは常に紋章の**上**を通り、
 どの半径の頂点も視覚的に隠れない。(2) 加えて紋章自体の半径も24pxまで縮小し、視覚的な主張も下げた。
 
 **コントラスト比の再計算（WCAG AA 4.5:1 以上を確認）**: 紋章が下地レイヤーに来たことで、`Lv N` ラベルの
