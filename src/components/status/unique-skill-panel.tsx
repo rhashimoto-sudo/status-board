@@ -1,12 +1,17 @@
 import { Panel } from "@/components/ui/panel";
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatValue } from "@/components/ui/stat-value";
-import { DERIVATION_EXP_BONUS } from "@/lib/constants";
+import { DERIVATION_EXP_BONUS, FINAL_CLASS_TOTAL_LEVEL } from "@/lib/constants";
 import { skillProgress } from "@/lib/skill";
 import type { UniqueSkill } from "@/lib/types";
 
 type UniqueSkillPanelProps = {
   skill: UniqueSkill;
+  /**
+   * TOTAL Lv。最終クラス到達判定（TOTAL Lv >= FINAL_CLASS_TOTAL_LEVEL）に使う。
+   * 全軸測定完了までは null（未測定）。docs/03_status_system.md:189。
+   */
+  totalLevel: number | null;
 };
 
 const DERIVATION_BONUS_LABEL = `+${DERIVATION_EXP_BONUS * 100}%`;
@@ -15,9 +20,15 @@ const DERIVATION_BONUS_LABEL = `+${DERIVATION_EXP_BONUS * 100}%`;
  * 固有スキル《構造化》パネル（07_unique_skill.md §5.2）。
  * Lv・発動回数・次Lvまでの残回数・倍率・派生5件（解放・未解放とその条件）を表示する。
  */
-export function UniqueSkillPanel({ skill }: UniqueSkillPanelProps) {
+export function UniqueSkillPanel({ skill, totalLevel }: UniqueSkillPanelProps) {
   const progress = skillProgress(skill.activations);
   const unlockedCount = skill.derivations.filter((derivation) => derivation.unlocked).length;
+  const allDerivationsUnlocked = unlockedCount === skill.derivations.length;
+  // 最終クラス到達は「全派生解放」だけでなく「TOTAL Lv >= FINAL_CLASS_TOTAL_LEVEL」も要る
+  // （src/lib/skill.ts の isFinalClassReached と同じ条件）。5/5 の時点で無条件に「到達」を
+  // 主張すると、TOTAL Lv が足りないユーザーに誤認させるため、totalLevel も合わせて判定する（A-5）。
+  const finalClassReached =
+    totalLevel !== null && Math.floor(totalLevel) >= FINAL_CLASS_TOTAL_LEVEL && allDerivationsUnlocked;
 
   return (
     <Panel heading={<span>🧬 固有スキル</span>}>
@@ -99,8 +110,22 @@ export function UniqueSkillPanel({ skill }: UniqueSkillPanelProps) {
       </div>
 
       <div className="mt-4 border-t border-[color:var(--color-border-hairline)] pt-3 text-[13px] text-[color:var(--color-text-secondary)]">
-        最終クラス《AIビジネスアーキテクト》{" "}
-        <StatValue>{unlockedCount}</StatValue>/<StatValue>{skill.derivations.length}</StatValue>
+        {finalClassReached ? (
+          <span className="text-[color:var(--color-text-primary)]">
+            <span aria-hidden="true">✓</span> 最終クラス《AIビジネスアーキテクト》到達（派生{" "}
+            <StatValue>{unlockedCount}</StatValue>/<StatValue>{skill.derivations.length}</StatValue>）
+          </span>
+        ) : (
+          <span>
+            派生解放 <StatValue>{unlockedCount}</StatValue>/<StatValue>{skill.derivations.length}</StatValue>
+            {allDerivationsUnlocked && (
+              <>
+                （最終クラス《AIビジネスアーキテクト》には TOTAL Lv{" "}
+                <StatValue>{FINAL_CLASS_TOTAL_LEVEL}</StatValue> も必要）
+              </>
+            )}
+          </span>
+        )}
       </div>
     </Panel>
   );
