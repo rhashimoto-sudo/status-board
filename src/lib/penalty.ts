@@ -1,0 +1,196 @@
+import {
+  DAILY_QUEST_COUNT,
+  DEBUFF_DURATION_DAYS,
+  DEBUFF_MULTIPLIERS,
+  DEBUFF_ORDER,
+  EXP_PENALTY,
+  HP_COLOR_THRESHOLDS,
+  HP_INCAPACITATED_BELOW,
+  HP_MAX,
+  HP_MIN,
+  HP_PENALTY,
+  NO_DEBUFF_MULTIPLIER,
+  STATUS_ORDER,
+} from "./constants";
+import { computeTotalLevel, levelsOf } from "./level";
+import type {
+  Debuff,
+  DailyQuest,
+  GameState,
+  HallOfFame,
+  HallOfFameEntry,
+  HpState,
+  HpZone,
+  MainStatusKey,
+  Phase,
+  PenaltyKind,
+  PenaltyResult,
+  StatusMap,
+} from "./types";
+
+/** 06_penalty.md §2「HPは 0..100 でクランプする」（S-2 / AC-4）。 */
+export function clampHp(hp: number): number {
+  return Math.min(HP_MAX, Math.max(HP_MIN, hp));
+}
+
+/** 06_penalty.md §7: HP_COLOR_THRESHOLDS を境界に safe/warn/danger を返す。 */
+export function hpZone(hp: number): HpZone {
+  if (hp > HP_COLOR_THRESHOLDS.safe) return "safe";
+  if (hp > HP_COLOR_THRESHOLDS.warn) return "warn";
+  return "danger";
+}
+
+/**
+ * HP の表示状態をまとめて返す。calibration 中の "—" 表示切り替えは UI 側の責務のため、
+ * ここでは常に実際の HP から算出した値を返す（phase は将来の分岐余地として受け取るのみ）。
+ */
+export function hpState(hp: number, phase: Phase): HpState {
+  void phase;
+  const current = clampHp(hp);
+  return {
+    current,
+    max: HP_MAX,
+    zone: hpZone(current),
+    incapacitated: current < HP_INCAPACITATED_BELOW,
+  };
+}
+
+/** DEBUFF_ORDER（重い順）で最初に該当する1件だけを返す（S-3 / C-8）。 */
+export function strongestDebuff(debuffs: readonly Debuff[]): Debuff | null {
+  for (const kind of DEBUFF_ORDER) {
+    const found = debuffs.find((d) => d.kind === kind);
+    if (found) return found;
+  }
+  return null;
+}
+
+/** デバフは乗算しない。最も重い1つの倍率だけを返す（AC-6 / S-3）。 */
+export function debuffMultiplier(debuffs: readonly Debuff[]): number {
+  const strongest = strongestDebuff(debuffs);
+  return strongest ? DEBUFF_MULTIPLIERS[strongest.kind] : NO_DEBUFF_MULTIPLIER;
+}
+
+/** デイリー5/5 達成時のみ +1、それ以外は 0 にリセットする（AC-12）。 */
+export function updateStreak(dailies: readonly DailyQuest[], streak: number): number {
+  const allClear = dailies.length === DAILY_QUEST_COUNT && dailies.every((d) => d.done);
+  return allClear ? streak + 1 : 0;
+}
+
+/** HP が 0 に到達したか（クランプ後の値で判定する）。 */
+export function isGameOver(hp: number): boolean {
+  return hp <= 0;
+}
+
+const NO_PENALTY: PenaltyResult = {
+  hpDelta: 0,
+  expDeltas: [],
+  addedDebuff: null,
+  streakReset: false,
+  gameOver: false,
+};
+
+/**
+ * 06_penalty.md §2 のペナルティ表を適用する。
+ * S-4（測定期間の免除）は入口1箇所でのみ判定する（C-9）。
+ */
+export function applyPenalty(
+  kind: PenaltyKind,
+  state: GameState,
+  ctx?: { baseExp?: number; expectedExp?: number; main?: MainStatusKey },
+): PenaltyResult {
+  if (state.phase === "calibration") return NO_PENALTY; // ★ S-4: 判定は必ずここだけ
+
+  switch (kind) {
+    case "dailyMiss": {
+      const hpDelta = HP_PENALTY.dailyMiss;
+      return {
+        hpDelta,
+        expDeltas: [{ key: "EXECUTION", amount: EXP_PENALTY.dailyMissExecution }],
+        addedDebuff: null,
+        streakReset: true,
+        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+      };
+    }
+    case "guerrillaExpired": {
+      const hpDelta = HP_PENALTY.guerrillaExpired;
+      const baseExp = ctx?.baseExp ?? 0;
+      const expDeltas: { key: MainStatusKey; amount: number }[] = [];
+      if (ctx?.main) {
+        expDeltas.push({
+          key: ctx.main,
+          amount: -Math.round(baseExp * EXP_PENALTY.guerrillaMainRatio),
+        });
+      }
+      expDeltas.push({ key: "BRIDGE", amount: EXP_PENALTY.guerrillaBridge });
+      return {
+        hpDelta,
+        expDeltas,
+        addedDebuff: null,
+        streakReset: false,
+        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+      };
+    }
+    case "missionFailed": {
+      const hpDelta = HP_PENALTY.missionFailed;
+      const expectedExp = ctx?.expectedExp ?? 0;
+      return {
+        hpDelta,
+        expDeltas: [
+          { key: "EXECUTION", amount: -Math.round(expectedExp * EXP_PENALTY.missionExecutionRatio) },
+        ],
+        addedDebuff: null,
+        streakReset: false,
+        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+      };
+    }
+    case "bossFailed": {
+      const hpDelta = HP_PENALTY.bossFailed;
+      return {
+        hpDelta,
+        expDeltas: [],
+        addedDebuff: { kind: "defeated", remainingDays: DEBUFF_DURATION_DAYS.defeated },
+        streakReset: false,
+        gameOver: isGameOver(clampHp(state.hp + hpDelta)),
+      };
+    }
+  }
+}
+
+/**
+ * 06_penalty.md §5.3 の手順で GAME OVER を処理する。
+ * 1.スナップショット 2.entries に push（既存を消さない） 3.全初期化 4.HP=100 5.generation+1 6.phase は "main" のまま
+ */
+export function gameOver(state: GameState, hallOfFame: HallOfFame): { state: GameState; hallOfFame: HallOfFame } {
+  const entry: HallOfFameEntry = {
+    generation: state.generation,
+    maxTotalLevel: computeTotalLevel(state.statuses),
+    maxLevels: levelsOf(state.statuses),
+    titles: [],
+    defeatedBosses: [],
+    longestStreak: state.streak,
+    survivedDays: 0,
+    endedAt: new Date().toISOString().slice(0, 10),
+  };
+
+  const resetStatuses = Object.fromEntries(
+    STATUS_ORDER.map((key) => [key, { ...state.statuses[key], exp: 0 }]),
+  ) as unknown as StatusMap;
+
+  const nextState: GameState = {
+    ...state,
+    phase: "main",
+    generation: state.generation + 1,
+    hp: HP_MAX,
+    streak: 0,
+    statuses: resetStatuses,
+    debuffs: [],
+    uniqueSkillActivations: 0,
+  };
+
+  const nextHallOfFame: HallOfFame = {
+    generation: nextState.generation,
+    entries: [...hallOfFame.entries, entry],
+  };
+
+  return { state: nextState, hallOfFame: nextHallOfFame };
+}
