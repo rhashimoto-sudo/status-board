@@ -8,8 +8,9 @@ import { StatValue } from "@/components/ui/stat-value";
 import { HpBar } from "@/components/status/hp-bar";
 
 type HeroHeaderProps = {
-  totalLevel: number;
-  totalTitle: string;
+  /** 全軸の測定が完了するまで null（未測定）。docs/03_status_system.md:189,193-194。 */
+  totalLevel: number | null;
+  totalTitle: string | null;
   hpState: HpState;
   debuffs: readonly Debuff[];
   streak: number;
@@ -21,7 +22,6 @@ type HeroHeaderProps = {
  * TOTAL Lv / 総合称号 / 次Lvまでの EXPバー / 🔥ストリーク / ♥HPバー / 🔻デバフ を描画する。
  */
 export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, phase }: HeroHeaderProps) {
-  const expProgress = totalLevelProgress(totalLevel);
   const strongest = strongestDebuff(debuffs);
   const showDebuffs = phase !== "calibration" && debuffs.length > 0;
 
@@ -31,19 +31,21 @@ export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, p
         <div className="flex items-baseline gap-3">
           <span className="text-[color:var(--color-text-secondary)]">TOTAL Lv</span>
           <StatValue className="text-[48px] leading-none text-[color:var(--color-text-primary)]">
-            {totalLevel.toFixed(1)}
+            {totalLevel === null ? "???" : totalLevel.toFixed(1)}
           </StatValue>
-          <span className="text-[color:var(--color-text-primary)]">{totalTitle}</span>
+          <span className="text-[color:var(--color-text-primary)]">{totalTitle ?? "???"}</span>
         </div>
 
-        <div className="flex items-center gap-2">
-          <ProgressBar
-            value={expProgress * 100}
-            max={100}
-            colorToken="cyan"
-            label="次のLvまでの進捗"
-          />
-        </div>
+        {totalLevel !== null && (
+          <div className="flex items-center gap-2">
+            <ProgressBar
+              value={totalLevelProgress(totalLevel) * 100}
+              max={100}
+              colorToken="cyan"
+              label="次のLvまでの進捗"
+            />
+          </div>
+        )}
 
         <div className="flex items-center gap-2">
           <span aria-hidden="true">🔥</span>
@@ -52,7 +54,7 @@ export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, p
           >
             {streak}日
           </StatValue>
-          {streak === 0 && (
+          {streak === 0 && phase !== "calibration" && (
             <span className="text-[color:var(--color-text-muted)]">途切れています</span>
           )}
         </div>
@@ -61,11 +63,13 @@ export function HeroHeader({ totalLevel, totalTitle, hpState, debuffs, streak, p
 
         {showDebuffs && (
           <div className="flex flex-col gap-1">
-            {debuffs.map((debuff) => {
-              const isStrongest = strongest?.kind === debuff.kind;
+            {debuffs.map((debuff, index) => {
+              // GameState.debuffs に kind の一意性は保証されないため、表示上は
+              // 配列内の同一オブジェクト（=== 比較）でハイライト対象を特定する（C-2）。
+              const isStrongest = strongest === debuff;
               return (
                 <div
-                  key={debuff.kind}
+                  key={`${debuff.kind}-${index}`}
                   className="flex items-center gap-2 text-[color:var(--color-debuff)]"
                 >
                   <span aria-hidden="true">🔻</span>

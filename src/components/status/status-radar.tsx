@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   PolarAngleAxis,
   PolarGrid,
@@ -7,6 +8,7 @@ import {
   Radar,
   RadarChart,
   ResponsiveContainer,
+  Text,
 } from "recharts";
 import { STATUS_ORDER } from "@/lib/constants";
 import type { StatusKey } from "@/lib/types";
@@ -43,6 +45,8 @@ type StatusRadarProps = {
    * calibration 中は測定完了分だけを渡す。
    */
   measuredKeys?: readonly StatusKey[];
+  /** レーダー中心に絶対配置する要素（《構造化》紋章など）。09_dashboard_spec.md:75。 */
+  centerSlot?: ReactNode;
 };
 
 type ChartRow = {
@@ -67,70 +71,94 @@ function buildChartRows(
     return {
       key,
       label: measured ? `${STATUS_EMOJI[key]} ${key}` : UNMEASURED_LABEL,
-      // 未測定の軸は値を出さない（多角形の頂点は中心に落ちるが、9軸の形は保たれる）
+      // 未測定の軸は current/ghost とも値を出さない（多角形の頂点は中心に落ちるが、9軸の形は保たれる）。
+      // ghost を測定済みでガードしないと、未測定軸でも3ヶ月前の値がチャートから読み取れてしまう（A-1）。
       current: measured ? (point?.current ?? 0) : 0,
-      ghost: point?.ghost ?? 0,
+      ghost: measured ? (point?.ghost ?? 0) : 0,
       measured,
     };
   });
 }
 
-function makeAxisTick(labelByKey: ReadonlyMap<StatusKey, string>) {
-  return function AxisTick({ x, y, textAnchor, payload }: BaseTickContentProps) {
-    const label = labelByKey.get(payload.value as StatusKey) ?? String(payload.value);
-    return (
-      <text
-        x={x}
-        y={y}
-        textAnchor={textAnchor}
-        fill="var(--color-text-secondary)"
-        fontSize={11}
-      >
-        {label}
-      </text>
-    );
-  };
+// モジュールレベルに巻き上げ、毎レンダーで新しいコンポーネント型を生成しない（C-1）。
+// labelByKey は `tick={<AxisTick labelByKey={...} />}` の要素として渡し、recharts が
+// x/y/payload 等を cloneElement でマージする（型の同一性は保たれるため再マウントされない）。
+type AxisTickProps = Partial<BaseTickContentProps> & {
+  labelByKey: ReadonlyMap<StatusKey, string>;
+};
+
+function AxisTick({ x, y, textAnchor, payload, labelByKey }: AxisTickProps) {
+  const label = payload ? (labelByKey.get(payload.value as StatusKey) ?? String(payload.value)) : "";
+  return (
+    <Text
+      x={x}
+      y={y}
+      textAnchor={textAnchor}
+      verticalAnchor="middle"
+      fill="var(--color-text-secondary)"
+      fontSize={11}
+    >
+      {label}
+    </Text>
+  );
 }
 
 /**
  * 9軸固定の Recharts レーダー（現在値 + 3ヶ月前ゴースト）。
  * 軸最大値は常に 10 固定。データに応じて自動調整しない（C-11）。
  */
-export function StatusRadar({ data, measuredKeys }: StatusRadarProps) {
+export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps) {
   const rows = buildChartRows(data, measuredKeys);
   const labelByKey = new Map(rows.map((row) => [row.key, row.label]));
 
   return (
     <div className="w-full">
-      <ResponsiveContainer width="100%" aspect={1}>
-        <RadarChart data={rows} outerRadius="70%">
-          <PolarGrid stroke="var(--color-border-hairline)" />
-          <PolarAngleAxis dataKey="key" tick={makeAxisTick(labelByKey)} />
-          <PolarRadiusAxis
-            domain={[0, RADAR_MAX]}
-            tick={false}
-            axisLine={false}
-            tickCount={6}
-          />
-          <Radar
-            name="3ヶ月前"
-            dataKey="ghost"
-            stroke="var(--color-ghost)"
-            strokeDasharray="4 3"
-            fill="var(--color-accent-violet)"
-            fillOpacity={0.1}
-            isAnimationActive={false}
-          />
-          <Radar
-            name="現在"
-            dataKey="current"
-            stroke="var(--color-accent-cyan)"
-            fill="var(--color-accent-cyan)"
-            fillOpacity={0.25}
-            isAnimationActive={false}
-          />
-        </RadarChart>
-      </ResponsiveContainer>
+      {/* centerSlot をレーダー中心に絶対配置するための相対コンテナ（A-4）。
+          ResponsiveContainer は aspect=1 の正方形なので、中心は常に 50%/50%。 */}
+      <div className="relative w-full">
+        <ResponsiveContainer width="100%" aspect={1}>
+          {/* outerRadius を 70% → 58% に縮小し、375px 幅でも軸ラベル（📣 MARKETING 等）が
+              SVG 端でクリップされない余白を確保する（B-1）。 */}
+          <RadarChart data={rows} outerRadius="58%">
+            <PolarGrid stroke="var(--color-border-hairline)" />
+            <PolarAngleAxis
+              dataKey="key"
+              tick={<AxisTick labelByKey={labelByKey} />}
+            />
+            <PolarRadiusAxis
+              domain={[0, RADAR_MAX]}
+              tick={false}
+              axisLine={false}
+              tickCount={6}
+            />
+            <Radar
+              name="3ヶ月前"
+              dataKey="ghost"
+              stroke="var(--color-ghost)"
+              strokeDasharray="4 3"
+              fill="var(--color-accent-violet)"
+              fillOpacity={0.1}
+              isAnimationActive={false}
+            />
+            <Radar
+              name="現在"
+              dataKey="current"
+              stroke="var(--color-accent-cyan)"
+              fill="var(--color-accent-cyan)"
+              fillOpacity={0.25}
+              isAnimationActive={false}
+            />
+          </RadarChart>
+        </ResponsiveContainer>
+        {centerSlot && (
+          <div
+            className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
+            aria-hidden={false}
+          >
+            {centerSlot}
+          </div>
+        )}
+      </div>
       <ul className="mt-2 flex flex-wrap justify-center gap-4 text-[13px] text-[color:var(--color-text-secondary)]">
         <li className="flex items-center gap-2">
           <span
@@ -141,10 +169,16 @@ export function StatusRadar({ data, measuredKeys }: StatusRadarProps) {
           現在
         </li>
         <li className="flex items-center gap-2">
+          {/* 凡例スウォッチは系列と同じ破線色（stroke: var(--color-ghost)）・
+              塗り不透明度 0.1（fillOpacity と同じ）に一致させる（B-3）。 */}
           <span
             aria-hidden
             className="inline-block h-2 w-2 rounded-full border border-dashed"
-            style={{ borderColor: "var(--color-accent-violet)" }}
+            style={{
+              borderColor: "var(--color-ghost)",
+              backgroundColor:
+                "color-mix(in srgb, var(--color-accent-violet) 10%, transparent)",
+            }}
           />
           3ヶ月前
         </li>
