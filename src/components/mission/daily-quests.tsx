@@ -1,6 +1,5 @@
 import { Panel } from "@/components/ui/panel";
-import { StatValue } from "@/components/ui/stat-value";
-import { EXP_PENALTY, HP_PENALTY } from "@/lib/constants";
+import { DailyChecklist } from "@/components/mission/daily-checklist";
 import { weekdayIndexInTimeZone } from "@/lib/datetime";
 import type { DailyQuest } from "@/lib/types";
 
@@ -30,11 +29,15 @@ function nextSelectableLabel(dailies: readonly DailyQuest[], nowMs: number): str
 
 /**
  * 本日のデイリー（09_dashboard_spec.md §3.3）。
- * 読み取り専用（C-21）: チェックボックス・ボタン・フォーム・onClick 等の操作系は一切置かない。
- * 達成/未達は ✓ / ・ のみで区別し、色では区別しない。
+ *
+ * このコンポーネントは**サーバー側で外枠と固定の注記だけ**を描く。チェック状態を持つ
+ * 一覧は `DailyChecklist`（クライアント）に委ねる。ページ本体（レーダー・90日履歴）の
+ * 静的生成を維持したまま、**変わる5件だけ**をクライアントで扱うための分割。
+ *
+ * 書き込みはデイリーのチェックに限る（C-21'）。押しても HP・ストリーク・EXP は変わらない
+ * （未達判定は日次ジョブ 03:00 JST の責務）。
  */
 export function DailyQuests({ dailies }: DailyQuestsProps) {
-  const remaining = dailies.filter((daily) => !daily.done).length;
   const nextSelectableDay = nextSelectableLabel(dailies, Date.now());
 
   return (
@@ -45,47 +48,7 @@ export function DailyQuests({ dailies }: DailyQuestsProps) {
         </>
       }
     >
-      <ul className="space-y-2">
-        {dailies.map((daily) => (
-          <li key={daily.id} className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span aria-hidden="true">{daily.done ? "✓" : "・"}</span>
-            <span className="min-w-0 flex-1 break-words text-[color:var(--color-text-primary)]">
-              {daily.title}
-              {/*
-                探索枠（00_profile.md §6.4）。未知に触れること自体が完了条件で成果を問わないため、
-                他の4個と区別が付かないと「できなかった」と誤認される。ラベルで明示する。
-                色は violet（既存のアクセント2色の範囲内。新しい色相を増やさない）。
-              */}
-              {daily.exploration && (
-                <span className="ml-2 whitespace-nowrap rounded-[3px] border border-[color:var(--color-accent-violet)]/40 px-1.5 py-0.5 text-[11px] tracking-[0.08em] text-[color:var(--color-accent-violet)]">
-                  探索枠
-                </span>
-              )}
-            </span>
-            <span className="whitespace-nowrap text-[13px] text-[color:var(--color-text-secondary)]">
-              {daily.main} +<StatValue>{daily.expectedExp}</StatValue>
-            </span>
-          </li>
-        ))}
-      </ul>
-
-      <div className="mt-4 border-t border-[color:var(--color-border-hairline)] pt-3 text-[13px] text-[color:var(--color-text-secondary)]">
-        {dailies.length === 0 ? (
-          <p>本日のデイリーはありません</p>
-        ) : remaining === 0 ? (
-          <p>✓ 本日達成済み</p>
-        ) : (
-          <>
-            <p>
-              ⚠ あと <StatValue>{remaining}</StatValue> つでストリークが途切れます
-            </p>
-            <p>
-              未達なら HP <StatValue>{HP_PENALTY.dailyMiss}</StatValue> / ⚔️EXECUTION{" "}
-              <StatValue>{EXP_PENALTY.dailyMissExecution}</StatValue> / 🔥 → <StatValue>0</StatValue>
-            </p>
-          </>
-        )}
-      </div>
+      <DailyChecklist initial={dailies} />
 
       {/* 探索枠の完了条件が他の4個と違うことを明記する（成果を出せなかった、と誤認させない）。 */}
       {dailies.some((daily) => daily.exploration) && (
