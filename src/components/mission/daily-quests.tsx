@@ -16,6 +16,18 @@ function weekdayLabel(iso: string): string {
   return `${WEEKDAY_LABELS[weekdayIndexInTimeZone(new Date(iso))]}曜日`;
 }
 
+// `lockedUntil` を過ぎていれば表示しない（レビュー指摘E）。5件が同じ値を持つ前提を置かず、
+// 複数の `lockedUntil` が異なりうる場合は最大値（＝最も遅く解除される日時）を使う。
+function nextSelectableLabel(dailies: readonly DailyQuest[], nowMs: number): string | null {
+  if (dailies.length === 0) return null;
+  const latestLockedUntil = dailies.reduce(
+    (latest, daily) => (daily.lockedUntil > latest ? daily.lockedUntil : latest),
+    dailies[0].lockedUntil,
+  );
+  if (new Date(latestLockedUntil).getTime() <= nowMs) return null;
+  return weekdayLabel(latestLockedUntil);
+}
+
 /**
  * 本日のデイリー（09_dashboard_spec.md §3.3）。
  * 読み取り専用（C-21）: チェックボックス・ボタン・フォーム・onClick 等の操作系は一切置かない。
@@ -23,7 +35,7 @@ function weekdayLabel(iso: string): string {
  */
 export function DailyQuests({ dailies }: DailyQuestsProps) {
   const remaining = dailies.filter((daily) => !daily.done).length;
-  const nextSelectableDay = dailies[0] ? weekdayLabel(dailies[0].lockedUntil) : null;
+  const nextSelectableDay = nextSelectableLabel(dailies, Date.now());
 
   return (
     <Panel
