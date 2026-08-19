@@ -83,6 +83,18 @@
     `maxTotalLevel`/`maxLevels` が記録されることを検証する（Wave1 で判明した漏れ。#26 で
     `GameState.levelCap` が必須になったため、この fixture がないと typecheck が通らない）
 
+#### Issue #32: status-radar.tsx の軸最大値を levelCap に連動させる
+- 状態: 未着手
+- 対象ファイル: `src/components/status/status-radar.tsx`
+- 提供: `StatusRadarProps.levelCap: number`（新規必須prop）
+- 依存契約: なし（levelCap は呼び出し元 #34 から渡る値の受け口を用意するのみ）
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `RADAR_MAX = 10` の定数定義を削除する（`grep -n RADAR_MAX src/components/status/status-radar.tsx` がヒットしない）
+  - [ ] `StatusRadarProps` に `levelCap: number` を追加し、`PolarRadiusAxis` の `domain` を `[0, levelCap]` にする
+  - [ ] コメント「軸最大値は常に10固定。データに応じて自動調整しない（C-11）」を「軸最大値はキャップ（levelCap）に連動する。キャップは制度上の値でありデータではないため、データに応じた自動調整には当たらない」という趣旨に書き換える
+  - [ ] このファイルにレベル閾値・キャップ値の数値リテラルを残さない（`levelCap` は必ずpropとして受け取る）
+
 #### Issue #33: status-list.tsx を levelCap 対応にする
 - 状態: 未着手
 - 対象ファイル: `src/components/status/status-list.tsx`
