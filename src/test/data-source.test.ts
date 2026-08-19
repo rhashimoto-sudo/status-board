@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 // このモジュールが例外を投げるため、テストでは空モジュールに差し替える。
 vi.mock("server-only", () => ({}));
 
-import { STATUS_ORDER } from "@/lib/constants";
+import { INITIAL_LEVEL_CAP, STATUS_ORDER } from "@/lib/constants";
 import { loadDashboard } from "@/lib/data-source";
 
 // data-source.ts は JSON を `as` でキャストしており、型検査はデータ崩れを捕まえない
@@ -85,6 +85,10 @@ describe("ダミーデータの形状", () => {
       it("hallOfFame が generation と entries を持つ", () => {
         expect(typeof data.hallOfFame.generation).toBe("number");
         expect(Array.isArray(data.hallOfFame.entries)).toBe(true);
+      });
+
+      it("levelCap が INITIAL_LEVEL_CAP と同値である", () => {
+        expect(data.state.levelCap).toBe(INITIAL_LEVEL_CAP);
       });
     });
   }
