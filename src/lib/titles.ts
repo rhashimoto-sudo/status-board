@@ -1,4 +1,5 @@
 import type { StatusKey } from "./types";
+import { TITLE_BAND_SIZE } from "./constants";
 
 // ── 称号テーブル（01_requirements.md FR-1-2 / 03_status_system.md §2 が正典）
 // ★ ユーザー提示の正典。表記・順序を一字一句変更してはならない。
@@ -53,9 +54,10 @@ export const TOTAL_TITLES: readonly string[] = [
 
 // 03_status_system.md §3.2「総合称号 = TOTAL_TITLES[floor(TOTAL Lv) - 1]」/
 // 09_dashboard_spec.md:59「totalTitleFor(floor(totalLv))」が正典。
-// 非整数 Lv（例: 3.9）はテーブルの整数インデックスに floor で丸めてからクランプする。
+// 称号テーブルは10段のまま、Lvを TITLE_BAND_SIZE(=10) 刻みの「帯」に丸めてインデックス化する。
+// Lv1〜10=第1帯、Lv11〜20=第2帯、…、Lv91〜100=第10帯 という対応で、10Lvごとに1段昇格する。
 function clampLevel(level: number): number {
-  return Math.floor(Math.min(10, Math.max(1, level)));
+  return Math.min(10, Math.max(1, Math.ceil(level / TITLE_BAND_SIZE)));
 }
 
 export function titleFor(key: StatusKey, level: number): string {
