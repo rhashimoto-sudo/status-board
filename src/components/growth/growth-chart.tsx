@@ -6,6 +6,7 @@ import {
   CartesianGrid,
   ComposedChart,
   Line,
+  ReferenceLine,
   ResponsiveContainer,
   Tooltip,
   XAxis,
@@ -133,13 +134,24 @@ function ChartTooltip({
   );
 }
 
-type GrowthChartProps = { history: readonly Snapshot[] };
+type GrowthChartProps = {
+  history: readonly Snapshot[];
+  /**
+   * 現在の levelCap（決定9）。Y軸の domain には反映しない（0〜MAX_LEVEL固定のまま）。
+   * cap の位置に基準線を1本引き、「ロックされた伸びしろ」として読ませるためだけに使う。
+   */
+  levelCap: number;
+};
 
 /**
  * 90日分の成長推移の折れ線グラフ。既定は TOTAL / LEARNING / EXECUTION の3本のみ表示し、
  * 専門7つは凡例クリックで個別にオン/オフする（09_dashboard_spec.md §4.1）。
+ *
+ * Y軸は levelCap に連動させない（0〜MAX_LEVEL固定）。cap 連動にすると、cap が動いた日に
+ * 過去90日ぶんが遡って再スケールされ、同じ過去データが日によって違う形に見えるため
+ * （レーダーの軸最大値を levelCap 連動にする決定9は、このTab3の時系列には適用しない）。
  */
-export function GrowthChart({ history }: GrowthChartProps) {
+export function GrowthChart({ history, levelCap }: GrowthChartProps) {
   const [visibleSpecialties, setVisibleSpecialties] = useState<
     ReadonlySet<SpecialtyStatusKey>
   >(new Set());
@@ -180,6 +192,24 @@ export function GrowthChart({ history }: GrowthChartProps) {
             width={28}
           />
           <Tooltip content={<ChartTooltip />} cursor={{ stroke: "var(--color-border-hairline)" }} />
+          {/* levelCap の基準線。「ロックされた伸びしろ」を示すためだけの補助線で、
+              系列としては扱わない（このコンポーネントは <Legend> を使っておらず、
+              独自実装の凡例<ul>は BASE_SERIES/SPECIALTIES のみを描画するため、
+              ReferenceLine は自動的に凡例・ツールチップの系列に混ざらない）。
+              発光禁止（CLAUDE.md）のため violet の低透明度のみで、グロー系のstyleは付けない。 */}
+          <ReferenceLine
+            y={levelCap}
+            stroke="var(--color-accent-violet)"
+            strokeOpacity={0.35}
+            strokeDasharray="4 4"
+            ifOverflow="visible"
+            label={{
+              value: `Lv上限 ${levelCap}`,
+              position: "insideTopRight",
+              fill: "var(--color-text-secondary)",
+              fontSize: 11,
+            }}
+          />
           {/* 乖離の帯。下段(gapBase)は透明で位置合わせのみ、上段(gapBand)が差の大きさを表す。 */}
           <Area
             dataKey="gapBase"

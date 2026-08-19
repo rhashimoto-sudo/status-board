@@ -26,7 +26,7 @@ export function GrowthTab({ data }: GrowthTabProps) {
         <CalibrationBanner progress={state.calibration} />
       ) : null}
 
-      <GrowthChart history={history} />
+      <GrowthChart history={history} levelCap={state.levelCap} />
 
       <ActivityHeatmap days={days} />
 
