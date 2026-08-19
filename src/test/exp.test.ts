@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { applyExpDelta, calcExp, distributeExp, floorExp } from "@/lib/exp";
+import { levelFloorExp } from "@/lib/level";
 import type { Status } from "@/lib/types";
 
 function makeStatus(exp: number): Status {
@@ -8,9 +9,12 @@ function makeStatus(exp: number): Status {
 
 describe("floorExp", () => {
   it.each([
-    [890, 5, 926], // Lv5(下限926)で -50: 940-50=890 -> 926（Lv5のまま）
-    [990, 5, 990], // Lv5(下限926)で -10: 1000-10=990 -> 990（下限を下回らない）
-    [-5, 1, 0], // Lv1(下限0)で -10: 5-10=-5 -> 0（負にならない）
+    // Lv5の下限を下回るときは下限でフロアする
+    [levelFloorExp(5) - 4, 5, levelFloorExp(5)],
+    // Lv5の下限を上回っているときはそのまま
+    [levelFloorExp(5) + 6, 5, levelFloorExp(5) + 6],
+    // Lv1（下限0）では負にならない
+    [-5, 1, levelFloorExp(1)],
   ])("newExp=%i, currentLevel=%i -> %i", (newExp, currentLevel, expected) => {
     expect(floorExp(newExp, currentLevel)).toBe(expected);
   });
