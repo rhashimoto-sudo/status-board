@@ -18,8 +18,112 @@
   - 実測（headless Chrome）: 2ルート × 4幅(375/768/1024/1440) × 3タブ = **全24通りで横スクロールなし**。
     コントラスト違反51件を検出し `--color-text-muted` を `#6b7490` → `#7b84a1` に修正して0件化
   - デプロイ・デザイン改善バックログとも完了。本番稼働中（`docs/13_deployment.md`）
-  - 次の一手: 下記「仕様追加（2026-08-19 ユーザー決定）」の S-1 → S-2 を先に確定させ、
-    その後「テスト運用までの P0（7件）」を進める
+  - 次の一手: **下記「引き継ぎ（2026-08-20 一時停止時点）」を読むこと。**
+    S-1 は実装完了・PR 未作成の状態で一時停止している
+
+## 引き継ぎ（2026-08-20 一時停止時点）
+
+> ユーザー指示により **S-1 の着地をもって一時停止**した。以下は再開時に読む場所。
+
+### いまどこにいるか
+
+| 項目 | 状態 |
+|---|---|
+| ブランチ | **`develop/level-100-scale`**（`main` にも `staging` にも未マージ） |
+| S-1（Lv100化 + levelCap） | **実装完了**。Tests 237 passed → 回帰テスト追加で **239 passed / 9ファイル** |
+| PR | **未作成。** 外向きの操作なのでユーザー判断待ち（`/pr-formatter` 未実行） |
+| docs 本体 | **未改訂**（決定10。Lv1〜10 の旧記述が残っている） |
+| worktree | すべて片付け済み（主ツリー1本のみ） |
+| `develop/level-100-scale-issue-38` | **不採用となった代替案を保存した未マージブランチ**（下記） |
+
+### 停止前に親セッションが追加したもの
+
+- **`src/test/exp.test.ts` の「applyExpDelta と levelCap（S-2 の不変条件）」**（`504c455`）
+  `applyExpDelta` は EXP フロアの基準に **cap を適用しない生Lv** を使わなければならない。
+  現状それを守っているのは「`levelFromExp` の第2引数が任意で `exp.ts` が渡していない」
+  という一点のみで、後から「cap を必須にする方が厳密」と変更すると、**キャップ到達中に
+  貯めた EXP が減点のたびに実効Lvの下限まで削られ、S-2 の核が静かに壊れる**。
+  `levelFromExp(status.exp, 50)` に変えると落ちることを実測で確認済み。**このテストを消さないこと。**
+
+- **`develop/level-100-scale-issue-38`（未マージ・マージしない）**
+  `rawLevelFromExp` を切り出して `levelFromExp` を cap **必須**引数にする案。同じ不変条件を
+  「関数名で意図を表明する」方向で守る。採用したのは任意引数方式（`exp.ts` を変更せずに済む）だが、
+  将来 cap の渡し忘れが実害を出したらこの案に切り替える余地がある。判断の経緯として残置。
+
+### 再開時の優先順
+
+1. **S-2 の申し送り3件**（S-1 のスコープ外として残したもの）
+   - [ ] `src/data/history.json` が旧10段の値のままで、Tab3 の折れ線が 0〜100 軸の下端に張り付く
+   - [ ] キャップ到達時の EXP バー別扱い（「⛔ Lv50 到達。ボス《…》討伐で解放」＋**貯蓄量の表示**）が未実装
+   - [ ] **cap を上げる経路（ボス討伐）が未実装**。現状 Lv50 を超えられない
+2. [ ] **docs 本体の改訂**（決定10 の「実測」は済んだ。S-1 節末尾の一覧が対象）
+3. [ ] S-3（ペナルティクエスト・保留方式）→ S-4（Quests DB 拡張）
+4. [ ] テスト運用までの P0 7件（本ファイルの該当セクション）
+
+---
+
+## pnpm への移行（プランのみ・未着手）
+
+> 2026-08-20 にプランだけ確定させた。**実行は S-1 が着地した後**という制約はもう解けている。
+> ただし急ぐ理由は無い（下記「正直な評価」）。
+
+**実測した前提**: Node v26.3.0 / npm 11.16.0 / **pnpm 11.20.0 導入済み** / corepack なし（Node 26 で同梱廃止）/
+`packageManager` と `engines` はどちらも未設定 / lockfile は `package-lock.json` のみ / `.npmrc` なし / `vercel.json` なし。
+
+### Phase 0: 実行前に確かめる（コードからは判定できない2件）
+- [ ] **Vercel が pnpm 11 に対応しているか。** Vercel は `pnpm-lock.yaml` を自動検出し `packageManager` でバージョンを決める。対応範囲外だとインストールが失敗する。非対応なら pin を下げる（lockfile 形式が変わるため後戻りが面倒）
+- [ ] **Vercel の Node バージョン設定。** ローカルが v26 なので、`engines` を書いた途端に落ちる可能性がある
+
+### Phase 1: 移行本体（ブランチ `chore/pnpm` / 1コミット）
+`pnpm import` は `package-lock.json` から解決済みバージョンを引き継ぐので、**消す前に走らせる**。
+```bash
+npm run verify                    # ① 移行前のグリーンをベースラインとして記録
+pnpm import                       # ② package-lock.json → pnpm-lock.yaml
+rm package-lock.json
+rm -rf node_modules .next
+pnpm install --frozen-lockfile    # ③ 厳密リンクで入れ直す
+```
+- [ ] `package.json` に `"packageManager": "pnpm@11.20.0"` と `"engines": { "node": ">=22" }`
+- [ ] `.gitignore` に `.pnpm-store/`
+- [ ] **`.npmrc` は最初は作らない。** 素の strict で通るか見て、壊れてから最小限の
+  `public-hoist-pattern` を足す（何が幽霊依存だったかが記録に残る）
+
+### Phase 2: 壊れやすい順に検証
+pnpm は hoisting をしないため、**package.json に書いていない依存を暗黙に使っていた箇所が露出**する。
+- [ ] `pnpm run lint` — **`eslint-config-next`** のプラグイン解決（最頻出の破損点）
+- [ ] `pnpm run build` — **`@tailwindcss/postcss`** の PostCSS プラグイン解決。`.next` を消したクリーンビルド
+- [ ] `pnpm run check:cycles` — **madge** の `--ts-config` 解決
+- [ ] `pnpm run typecheck` / `pnpm run test`（vitest 4）
+- [ ] `pnpm run dev` で `/` と `/calibration` を目視
+
+### Phase 3: デプロイ（唯一の本番リスク）
+- [ ] **プレビューデプロイで確認してから `main` にマージする。** いま `main` に入れると本番
+  （`status-board-khaki.vercel.app`）が落ちる可能性がある
+- [ ] Install Command は自動のままか `pnpm install --frozen-lockfile` を明示
+- 切り戻し: 移行コミットの revert + `npm ci`（`package-lock.json` は git 履歴に残る）
+
+### Phase 4: ドキュメント追随（18ファイル・55箇所）
+| 対象 | 件数 | 扱い |
+|---|---|---|
+| `CLAUDE.md`「ビルド・テスト・リント」 | 3 | **直す**（エージェントが毎回読む。最優先） |
+| `docs/02_architecture.md` | 8 | 直す |
+| `docs/TODO.md` | 10 | 直す |
+| `docs/01_requirements.md`（技術スタック） | 2 | 直す |
+| `docs/11_design_system.md` | 1 | 直す |
+| **`docs/WORK_LOG/` × 11ファイル・`docs/ERROR_LOG/`** | **31** | **直さない** |
+
+> **WORK_LOG / ERROR_LOG を書き換えないこと。** 「その日 npm で実行した」という
+> 過去の事実の記録であり、後から pnpm に書き換えるのは記録の改竄にあたる。
+> `2026-08-10` のエラーログを読んだ人が再現できなくなる。
+
+- [ ] まだ存在しない **`.github/workflows/daily.yml`（P0-1）は最初から pnpm で書く**
+
+### 正直な評価（判断材料として残す）
+dependencies 5個 / devDependencies 11個、単一パッケージ、モノレポでもない。pnpm の主な利点
+（ディスク共有・大量依存のインストール高速化・ワークスペース）は**ほとんど効かない**。
+実質得られるのは幽霊依存の検出と厳密性で、**コストは Phase 3 の本番リスク**。
+「他プロジェクトと揃える」「今後 `scripts/` が増える」といった理由があるなら妥当だが、
+**急いでやる理由は無い。**
 
 ## Wave 分解（S-1 / 2026-08-19）
 
