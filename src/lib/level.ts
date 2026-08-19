@@ -5,15 +5,29 @@ function clampLevel(level: number): number {
   return Math.min(MAX_LEVEL, Math.max(1, level));
 }
 
-/** exp >= LEVEL_THRESHOLDS[i] を満たす最大の i+1 を返す（上限 MAX_LEVEL）。 */
-export function levelFromExp(exp: number): number {
+/**
+ * levelCap を 1..MAX_LEVEL にクランプする（1未満やMAX_LEVEL超が渡っても壊れないようにする）。
+ */
+function clampLevelCap(levelCap: number): number {
+  return Math.min(MAX_LEVEL, Math.max(1, levelCap));
+}
+
+/**
+ * exp >= LEVEL_THRESHOLDS[i] を満たす最大の i+1 を実効Lvとして返す（min(算出Lv, levelCap)）。
+ *
+ * levelCap は任意引数・既定値 MAX_LEVEL。理由: exp.ts の EXP フロア計算は生のLvを必要とし
+ * （キャップ後のLvでフロアすると貯蓄が消える）、かつ既定値 MAX_LEVEL はキャップなしと
+ * 数学的に等価（no-op）であるため、既定値の存在自体が上限を無効化するわけではない。
+ * ただし実効Lvを表示・判定に使う呼び出し元は必ず明示的に cap を渡すこと。
+ */
+export function levelFromExp(exp: number, levelCap: number = MAX_LEVEL): number {
   let level = 1;
   for (let i = 0; i < LEVEL_THRESHOLDS.length; i++) {
     if (exp >= LEVEL_THRESHOLDS[i]) {
       level = i + 1;
     }
   }
-  return clampLevel(level);
+  return Math.min(clampLevel(level), clampLevelCap(levelCap));
 }
 
 /** その Lv の下限累積EXP。 */
@@ -22,14 +36,24 @@ export function levelFloorExp(level: number): number {
   return LEVEL_THRESHOLDS[clamped - 1];
 }
 
-/** 次Lvまでの残EXP。Lv10（MAX）では null。 */
+/**
+ * 次Lvまでの残EXP。実Lvが MAX_LEVEL に達したときのみ null。
+ *
+ * cap 引数は追加しない。生の累積EXPに対する値を返し続けることで、levelCap 到達中も
+ * 「貯まっているEXP量」がそのまま画面に見える（S-2の要件）。0 やnullに潰さない。
+ */
 export function expToNextLevel(exp: number): number | null {
   const level = levelFromExp(exp);
   if (level >= MAX_LEVEL) return null;
   return LEVEL_THRESHOLDS[level] - exp;
 }
 
-/** 現Lv内の進捗率 0..1。Lv10 では 1。 */
+/**
+ * 現Lv内の進捗率 0..1。実Lvが MAX_LEVEL では 1。
+ *
+ * cap 引数は追加しない。expToNextLevel と同様、生の累積EXPに対する進捗を返し続け、
+ * levelCap 到達中も貯蓄の進み具合がそのまま見えるようにする。0 に潰さない。
+ */
 export function levelProgress(exp: number): number {
   const level = levelFromExp(exp);
   if (level >= MAX_LEVEL) return 1;
@@ -39,22 +63,28 @@ export function levelProgress(exp: number): number {
   return Math.min(1, Math.max(0, progress));
 }
 
-/** 9ステータス全てのLvを算出する。 */
-export function levelsOf(statuses: StatusMap): Record<StatusKey, number> {
+/**
+ * 9ステータス全ての実効Lv（min(算出Lv, levelCap)）を算出する。
+ *
+ * levelCap を必須引数にする。集計系関数は渡し忘れると全軸の上限が無言で効かなくなるため。
+ */
+export function levelsOf(statuses: StatusMap, levelCap: number): Record<StatusKey, number> {
   const result = {} as Record<StatusKey, number>;
   for (const key of STATUS_ORDER) {
-    result[key] = levelFromExp(statuses[key].exp);
+    result[key] = levelFromExp(statuses[key].exp, levelCap);
   }
   return result;
 }
 
 /**
- * 上位5ステータスのLv平均×0.6 + 全9ステータスのLv平均×0.4。
+ * 上位5ステータスの実効Lv平均×0.6 + 全9ステータスの実効Lv平均×0.4。
  * Lv同値の場合は STATUS_ORDER 順で先にあるものを上位5件に優先して採用する（決定的な選択）。
  * 小数第1位に丸めて返す。
+ *
+ * levelCap を必須引数にする。渡し忘れると全軸の上限が無言で効かなくなるため。
  */
-export function computeTotalLevel(statuses: StatusMap): number {
-  const levels = levelsOf(statuses);
+export function computeTotalLevel(statuses: StatusMap, levelCap: number): number {
+  const levels = levelsOf(statuses, levelCap);
   // STATUS_ORDER の順に並んだ配列を、Lv降順・同値ならSTATUS_ORDER順（=元のindex昇順）で安定ソートする。
   const entries = STATUS_ORDER.map((key, index) => ({ key, index, level: levels[key] }));
   const sorted = [...entries].sort((a, b) => {
@@ -78,12 +108,16 @@ export function totalLevelProgress(totalLevel: number): number {
  * 最も Lv が低い軸を返す（CLAUDE.md「弱い領域が得意領域の陰に隠れて放置される」への対処）。
  * 同値のときは STATUS_ORDER 順で決定的に選ぶ（computeTotalLevel の上位5選出と同じ規則）。
  * calibration 中の未測定軸は判定対象から外す（"???" の軸を「最も薄い」と断定しないため）。
+ *
+ * levelCap を第2引数の必須引数にする（渡し忘れると全軸の上限が無言で効かなくなるため）。
+ * count は第3引数の任意引数へ移す。
  */
 export function weakestStatuses(
   statuses: StatusMap,
+  levelCap: number,
   count: number = WEAK_AXIS_COUNT,
 ): readonly { key: StatusKey; level: number }[] {
-  const levels = levelsOf(statuses);
+  const levels = levelsOf(statuses, levelCap);
   const entries = STATUS_ORDER
     .map((key, index) => ({ key, index, level: levels[key], measured: statuses[key].measured }))
     .filter((e) => e.measured);
