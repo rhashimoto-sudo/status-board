@@ -56,8 +56,15 @@ export const TOTAL_TITLES: readonly string[] = [
 // 09_dashboard_spec.md:59「totalTitleFor(floor(totalLv))」が正典。
 // 称号テーブルは10段のまま、Lvを TITLE_BAND_SIZE(=10) 刻みの「帯」に丸めてインデックス化する。
 // Lv1〜10=第1帯、Lv11〜20=第2帯、…、Lv91〜100=第10帯 という対応で、10Lvごとに1段昇格する。
+//
+// 帯判定の前に必ず floor する（Issue #40）。呼び出し元（例: status-tab.tsx の
+// totalTitleFor(totalLevel)）は computeTotalLevel が返す小数第1位の TOTAL Lv を
+// floor せずにそのまま渡してくる。floor を後段（この関数の中）で行わないと、
+// 例えば Lv=20.4 は Math.ceil(20.4/10)=3 となり本来の第2帯（floor(20.4)=20 →
+// ceil(20/10)=2）より1帯早く昇格してしまう。呼び出し元全部に floor を強制するより、
+// 帯判定の関数自身が契約通りに丸める方が、同じ間違いの再発を防げる。
 function clampLevel(level: number): number {
-  return Math.min(10, Math.max(1, Math.ceil(level / TITLE_BAND_SIZE)));
+  return Math.min(10, Math.max(1, Math.ceil(Math.floor(level) / TITLE_BAND_SIZE)));
 }
 
 export function titleFor(key: StatusKey, level: number): string {

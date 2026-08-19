@@ -137,6 +137,19 @@ describe("titles.ts", () => {
     expect(titleFor("INT", 100.9)).toBe(titleFor("INT", 100));
   });
 
+  it("称号帯: 帯の境界を跨ぐ小数Lvでも floor(level) と同じ帯を返す（Issue #40 回帰）", () => {
+    // TOTAL Lv = 20.4 → floor(20.4) = 20 → 第2帯（floor しないと ceil(20.4/10)=3 で1帯早く上がる）
+    expect(totalTitleFor(20.4)).toBe(totalTitleFor(20));
+    expect(totalTitleFor(20.4)).toBe(TOTAL_TITLES[1]);
+  });
+
+  it("称号帯: 各帯の先頭Lv + 0.4 は前の帯に留まる（k=1..9で一般化・Issue #40 回帰）", () => {
+    for (let k = 1; k <= 9; k++) {
+      const boundary = k * TITLE_BAND_SIZE;
+      expect(totalTitleFor(boundary + 0.4)).toBe(totalTitleFor(boundary));
+    }
+  });
+
   it("重複称号がリネームされずそのまま残っている（意図的な重複）", () => {
     // 「学習者」= INT第1帯 = LEARNING第1帯
     expect(titleFor("INT", 1)).toBe("学習者");
