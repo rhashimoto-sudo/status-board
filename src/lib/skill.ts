@@ -58,15 +58,20 @@ export function structureBonus(involvedCount: number, skillLevel: number): numbe
   return skillMultiplier(skillLevel);
 }
 
-/** DERIVATIONS の requires（AND条件）をステータスLvから毎回導出する。解放フラグは永続化しない。 */
-export function derivationStates(statuses: StatusMap): readonly DerivationState[] {
+/**
+ * DERIVATIONS の requires（AND条件）を実効Lv（levelCap適用後）から毎回導出する。解放フラグは永続化しない。
+ *
+ * levelCap は必須引数にする。levelFromExp の既定値（no-op）に頼ると、渡し忘れたときに
+ * 貯蓄分で派生だけ実exp通りに先行解放されるという静かな不具合になるため。
+ */
+export function derivationStates(statuses: StatusMap, levelCap: number): readonly DerivationState[] {
   return DERIVATIONS.map((derivation) => {
     const requirements = derivation.requires.map((req) => {
       const key = req.key as SpecialtyStatusKey;
       return {
         key,
         required: req.level,
-        current: levelFromExp(statuses[key].exp),
+        current: levelFromExp(statuses[key].exp, levelCap),
       };
     });
     const unlocked = requirements.every((req) => req.current >= req.required);
@@ -75,23 +80,23 @@ export function derivationStates(statuses: StatusMap): readonly DerivationState[
 }
 
 /** 派生5種すべてが解放済みか。 */
-export function allDerivationsUnlocked(statuses: StatusMap): boolean {
-  return derivationStates(statuses).every((derivation) => derivation.unlocked);
+export function allDerivationsUnlocked(statuses: StatusMap, levelCap: number): boolean {
+  return derivationStates(statuses, levelCap).every((derivation) => derivation.unlocked);
 }
 
 /** 最終クラス《AIビジネスアーキテクト》到達判定。TOTAL Lv9到達 かつ 派生5種すべて解放。 */
-export function isFinalClassReached(totalLevel: number, statuses: StatusMap): boolean {
-  return Math.floor(totalLevel) >= FINAL_CLASS_TOTAL_LEVEL && allDerivationsUnlocked(statuses);
+export function isFinalClassReached(totalLevel: number, statuses: StatusMap, levelCap: number): boolean {
+  return Math.floor(totalLevel) >= FINAL_CLASS_TOTAL_LEVEL && allDerivationsUnlocked(statuses, levelCap);
 }
 
 /** UniqueSkill をまとめて構築する。 */
-export function buildUniqueSkill(activations: number, statuses: StatusMap): UniqueSkill {
+export function buildUniqueSkill(activations: number, statuses: StatusMap, levelCap: number): UniqueSkill {
   const level = skillLevelFromActivations(activations);
   return {
     activations,
     level,
     multiplier: skillMultiplier(level),
     toNext: activationsToNext(activations),
-    derivations: derivationStates(statuses),
+    derivations: derivationStates(statuses, levelCap),
   };
 }
