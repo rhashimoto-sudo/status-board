@@ -18,9 +18,9 @@ const UNMEASURED_LABEL = "???";
 
 export type StatusRadarPoint = {
   key: StatusKey;
-  /** 現在の Lv（1〜10）。 */
+  /** 現在の Lv（1〜100）。 */
   current: number;
-  /** 3ヶ月前の Lv（1〜10）。 */
+  /** 3ヶ月前の Lv（1〜100）。 */
   ghost: number;
 };
 
