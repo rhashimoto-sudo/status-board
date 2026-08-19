@@ -12,7 +12,7 @@ import {
   structureBonus,
 } from "@/lib/skill";
 import { levelFloorExp } from "@/lib/level";
-import { SKILL_MULTIPLIERS, STATUS_ORDER } from "@/lib/constants";
+import { DERIVATIONS, FINAL_CLASS_TOTAL_LEVEL, MAX_LEVEL, SKILL_MULTIPLIERS, STATUS_ORDER } from "@/lib/constants";
 import type { Status, StatusKey, StatusMap } from "@/lib/types";
 
 function makeStatusMap(levelByKey: Partial<Record<StatusKey, number>>): StatusMap {
@@ -26,6 +26,15 @@ function makeStatusMap(levelByKey: Partial<Record<StatusKey, number>>): StatusMa
     };
   }
   return map;
+}
+
+/** DERIVATIONS から特定派生・特定軸の requires.level を引く（テストへの直書きを避ける）。 */
+function requirementLevel(derivationId: string, key: StatusKey): number {
+  const derivation = DERIVATIONS.find((d) => d.id === derivationId);
+  if (!derivation) throw new Error(`derivation not found: ${derivationId}`);
+  const requirement = derivation.requires.find((r) => r.key === key);
+  if (!requirement) throw new Error(`requirement not found: ${derivationId}/${key}`);
+  return requirement.level;
 }
 
 describe("skillLevelFromActivations", () => {
@@ -114,72 +123,115 @@ describe("structureBonus", () => {
   });
 });
 
+const SYSTEM_DESIGN_TECH_REQ = requirementLevel("system-design", "TECH");
+const SYSTEM_DESIGN_INT_REQ = requirementLevel("system-design", "INT");
+const DATA_ANALYSIS_DATA_REQ = requirementLevel("data-analysis", "DATA");
+const AI_DEVELOPMENT_TECH_REQ = requirementLevel("ai-development", "TECH");
+const PM_PM_REQ = requirementLevel("pm", "PM");
+const BRIDGE_BRIDGE_REQ = requirementLevel("bridge", "BRIDGE");
+
 describe("derivationStates", () => {
-  it("TECH7・INT4 では《システム設計》未解放", () => {
-    const statuses = makeStatusMap({ TECH: 7, INT: 4 });
-    const states = derivationStates(statuses);
+  it("TECH条件は満たすがINT条件未満では《システム設計》未解放", () => {
+    const statuses = makeStatusMap({ TECH: SYSTEM_DESIGN_TECH_REQ, INT: SYSTEM_DESIGN_INT_REQ - 1 });
+    const states = derivationStates(statuses, MAX_LEVEL);
     const systemDesign = states.find((s) => s.id === "system-design");
     expect(systemDesign?.unlocked).toBe(false);
   });
 
-  it("TECH7・INT5 では《システム設計》解放（AND条件）", () => {
-    const statuses = makeStatusMap({ TECH: 7, INT: 5 });
-    const states = derivationStates(statuses);
+  it("TECH・INT条件をどちらも満たすと《システム設計》解放（AND条件）", () => {
+    const statuses = makeStatusMap({ TECH: SYSTEM_DESIGN_TECH_REQ, INT: SYSTEM_DESIGN_INT_REQ });
+    const states = derivationStates(statuses, MAX_LEVEL);
     const systemDesign = states.find((s) => s.id === "system-design");
     expect(systemDesign?.unlocked).toBe(true);
   });
 
-  it("DATA5 では《データ分析》のみ単純条件で解放される", () => {
-    const statuses = makeStatusMap({ DATA: 5 });
-    const states = derivationStates(statuses);
+  it("DATA条件を満たすと《データ分析》のみ単純条件で解放される", () => {
+    const statuses = makeStatusMap({ DATA: DATA_ANALYSIS_DATA_REQ });
+    const states = derivationStates(statuses, MAX_LEVEL);
     const dataAnalysis = states.find((s) => s.id === "data-analysis");
     expect(dataAnalysis?.unlocked).toBe(true);
   });
 
   it("requirements に required/current が正しく入る", () => {
-    const statuses = makeStatusMap({ TECH: 7, INT: 5 });
-    const states = derivationStates(statuses);
+    const statuses = makeStatusMap({ TECH: SYSTEM_DESIGN_TECH_REQ, INT: SYSTEM_DESIGN_INT_REQ });
+    const states = derivationStates(statuses, MAX_LEVEL);
     const systemDesign = states.find((s) => s.id === "system-design");
     expect(systemDesign?.requirements).toEqual([
-      { key: "TECH", required: 7, current: 7 },
-      { key: "INT", required: 5, current: 5 },
+      { key: "TECH", required: SYSTEM_DESIGN_TECH_REQ, current: SYSTEM_DESIGN_TECH_REQ },
+      { key: "INT", required: SYSTEM_DESIGN_INT_REQ, current: SYSTEM_DESIGN_INT_REQ },
     ]);
+  });
+
+  it("levelCap=50 では TECH の実Lvが70超でも current は50で頭打ちになり《システム設計》は解放されない（貯蓄分の先行解放なし）", () => {
+    // 実Lvは system-design の TECH 要件を大きく超える値にし、levelCap=50 でも
+    // 別の要件（ai-development の TECH:50）には抵触しない値であることを明示する。
+    expect(SYSTEM_DESIGN_TECH_REQ).toBeGreaterThan(50);
+    const realTechLevel = SYSTEM_DESIGN_TECH_REQ + 20;
+    const statuses = makeStatusMap({ TECH: realTechLevel, INT: SYSTEM_DESIGN_INT_REQ });
+    const states = derivationStates(statuses, 50);
+    const systemDesign = states.find((s) => s.id === "system-design");
+    const techRequirement = systemDesign?.requirements.find((r) => r.key === "TECH");
+    expect(techRequirement?.current).toBe(50);
+    expect(systemDesign?.unlocked).toBe(false);
+
+    // 比較対象: levelCap なし（MAX_LEVEL）なら同じ実Lvで解放されることを確認する。
+    const uncappedStates = derivationStates(statuses, MAX_LEVEL);
+    const uncappedSystemDesign = uncappedStates.find((s) => s.id === "system-design");
+    expect(uncappedSystemDesign?.unlocked).toBe(true);
   });
 });
 
 describe("allDerivationsUnlocked", () => {
   it("5派生すべてを満たすレベル構成で true", () => {
-    const statuses = makeStatusMap({ DATA: 5, TECH: 7, INT: 5, PM: 5, BRIDGE: 5 });
-    expect(allDerivationsUnlocked(statuses)).toBe(true);
+    const statuses = makeStatusMap({
+      DATA: DATA_ANALYSIS_DATA_REQ,
+      TECH: Math.max(AI_DEVELOPMENT_TECH_REQ, SYSTEM_DESIGN_TECH_REQ),
+      INT: SYSTEM_DESIGN_INT_REQ,
+      PM: PM_PM_REQ,
+      BRIDGE: BRIDGE_BRIDGE_REQ,
+    });
+    expect(allDerivationsUnlocked(statuses, MAX_LEVEL)).toBe(true);
   });
 
   it("1つでも未解放なら false", () => {
-    const statuses = makeStatusMap({ DATA: 5, TECH: 7, INT: 5, PM: 5, BRIDGE: 4 });
-    expect(allDerivationsUnlocked(statuses)).toBe(false);
+    const statuses = makeStatusMap({
+      DATA: DATA_ANALYSIS_DATA_REQ,
+      TECH: Math.max(AI_DEVELOPMENT_TECH_REQ, SYSTEM_DESIGN_TECH_REQ),
+      INT: SYSTEM_DESIGN_INT_REQ,
+      PM: PM_PM_REQ,
+      BRIDGE: BRIDGE_BRIDGE_REQ - 1,
+    });
+    expect(allDerivationsUnlocked(statuses, MAX_LEVEL)).toBe(false);
   });
 });
 
 describe("isFinalClassReached", () => {
-  it("TOTAL Lv9でも派生5種未解放なら false", () => {
+  const allUnlockedStatuses = makeStatusMap({
+    DATA: DATA_ANALYSIS_DATA_REQ,
+    TECH: Math.max(AI_DEVELOPMENT_TECH_REQ, SYSTEM_DESIGN_TECH_REQ),
+    INT: SYSTEM_DESIGN_INT_REQ,
+    PM: PM_PM_REQ,
+    BRIDGE: BRIDGE_BRIDGE_REQ,
+  });
+
+  it(`TOTAL Lv${FINAL_CLASS_TOTAL_LEVEL}でも派生5種未解放なら false`, () => {
     const statuses = makeStatusMap({});
-    expect(isFinalClassReached(9, statuses)).toBe(false);
+    expect(isFinalClassReached(FINAL_CLASS_TOTAL_LEVEL, statuses, MAX_LEVEL)).toBe(false);
   });
 
-  it("TOTAL Lv9 かつ 派生5種すべて解放で true", () => {
-    const statuses = makeStatusMap({ DATA: 5, TECH: 7, INT: 5, PM: 5, BRIDGE: 5 });
-    expect(isFinalClassReached(9, statuses)).toBe(true);
+  it(`TOTAL Lv${FINAL_CLASS_TOTAL_LEVEL} かつ 派生5種すべて解放で true`, () => {
+    expect(isFinalClassReached(FINAL_CLASS_TOTAL_LEVEL, allUnlockedStatuses, MAX_LEVEL)).toBe(true);
   });
 
-  it("派生5種解放済みでも TOTAL Lv が9未満なら false", () => {
-    const statuses = makeStatusMap({ DATA: 5, TECH: 7, INT: 5, PM: 5, BRIDGE: 5 });
-    expect(isFinalClassReached(8.9, statuses)).toBe(false);
+  it(`派生5種解放済みでも TOTAL Lv が${FINAL_CLASS_TOTAL_LEVEL}未満なら false`, () => {
+    expect(isFinalClassReached(FINAL_CLASS_TOTAL_LEVEL - 0.1, allUnlockedStatuses, MAX_LEVEL)).toBe(false);
   });
 });
 
 describe("buildUniqueSkill", () => {
   it("発動52回 -> Lv4・×1.30・derivations を含む UniqueSkill を構築する", () => {
     const statuses = makeStatusMap({});
-    const skill = buildUniqueSkill(52, statuses);
+    const skill = buildUniqueSkill(52, statuses, MAX_LEVEL);
     expect(skill.activations).toBe(52);
     expect(skill.level).toBe(4);
     expect(skill.multiplier).toBe(1.30);
@@ -189,7 +241,7 @@ describe("buildUniqueSkill", () => {
 
   it("Lv10（500回）では toNext が null", () => {
     const statuses = makeStatusMap({});
-    const skill = buildUniqueSkill(500, statuses);
+    const skill = buildUniqueSkill(500, statuses, MAX_LEVEL);
     expect(skill.toNext).toBeNull();
   });
 });
