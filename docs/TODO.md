@@ -21,6 +21,196 @@
   - 次の一手: 下記「仕様追加（2026-08-19 ユーザー決定）」の S-1 → S-2 を先に確定させ、
     その後「テスト運用までの P0（7件）」を進める
 
+## Wave 分解（S-1 / 2026-08-19）
+
+> planner（Phase2モード）が既存コードを読んで分解。scope: S-1（レベルスケールの100段化）+
+> 決定9が要求する levelCap の状態・配線まで。ボス討伐での cap 上昇経路・Notion連携・日次ジョブ・
+> S-3・S-4・docs本体の改訂は**スコープ外**（着手しない）。
+> Issue数: 13 / Wave数: 4（レビュー区切り4回）/ 最長依存鎖: 4（#25 → #28 → #30 → #34）
+> 担当エージェント: 全Issue共通で `dev-phase2-worker`
+> **全Issue共通の受け入れ条件**: docs本体（`00_profile.md`/`01_requirements.md`/`03_status_system.md`/
+> `04_exp_rules.md`/`07_unique_skill.md`/`09_dashboard_spec.md`等）を書き換えない・`/spec-sync` を実行しない。
+> 全Wave完了後の最終ゲート: `npm run verify` / `npm run lint` / `npm run check:cycles`（循環0件）が通り、
+> `grep` で `src/components/` にレベル閾値・キャップ値の数値リテラルが出現しない（AC-15）。
+> 375/768/1024/1440px で横スクロールが発生しない（Lv表示が2〜3桁になるため等幅フォントの桁揃えを確認）。
+
+### Wave 1
+
+#### Issue #25: constants.ts のレベル定数体系を100段化する
+- 状態: 未着手
+- 対象ファイル: `src/lib/constants.ts`
+- 提供: `LEVEL_THRESHOLDS`（100要素・ユーザー提示の配列にそのまま差し替え）/ `MAX_LEVEL = 100` /
+  `TITLE_BAND_SIZE = 10` / `LEVEL_CAP_GATES = [50, 70, 90, 100] as const` /
+  `INITIAL_LEVEL_CAP = LEVEL_CAP_GATES[0]` / `DERIVATIONS`（requires を×10に更新） /
+  `FINAL_CLASS_TOTAL_LEVEL = 90` / `CALIBRATION_INITIAL_LEVEL_RANGE = {min:10, max:50}` /
+  `CALIBRATION_TOTAL_QUESTS = 14`
+- 依存契約: なし
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `LEVEL_THRESHOLDS.length === 100` かつ内容がユーザー提示の100要素配列と完全一致する（再計算・再丸めをしない。そのまま採用）。`MAX_LEVEL === 100`
+  - [ ] `TITLE_BAND_SIZE`/`LEVEL_CAP_GATES`/`INITIAL_LEVEL_CAP` が追加されている
+  - [ ] `DERIVATIONS` の requires が `DATA→50` / `TECH(ai-development)→50` / `TECH(system-design)→70 + INT→50` / `PM→50` / `BRIDGE→50` に更新され、`FINAL_CLASS_TOTAL_LEVEL === 90`
+  - [ ] `CALIBRATION_INITIAL_LEVEL_RANGE === {min:10, max:50}`（上限50=初期キャップ50。コメントで「片方だけ動かしてはならない」旨を残す）、`CALIBRATION_TOTAL_QUESTS === 14`
+  - [ ] コメントに「旧カンスト11287はLv91にあたり、Lv92〜100は旧設計に存在しなかった領域」「ゲート③(Lv90)がその直前に落ちる」「EXP側のバランス定数（DIFFICULTY_BASE_EXP等）はこの再分割では変更しない」を残す
+  - [ ] `CALIBRATION_TOTAL_QUESTS`/`CALIBRATION_INITIAL_LEVEL_RANGE`以外の既存エクスポート（`DIFFICULTY_BASE_EXP`等）を変更しない
+
+#### Issue #26: types.ts の GameState に levelCap を追加する
+- 状態: 未着手
+- 対象ファイル: `src/lib/types.ts`
+- 提供: `GameState.levelCap: number`
+- 依存契約: なし
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `GameState` 型に `levelCap: number` フィールドが追加されている
+  - [ ] `GameState` の他フィールド（`phase`/`generation`/`hp`/`streak`/`statuses`/`debuffs`/`uniqueSkillActivations`/`calibration`）は変更しない
+  - [ ] この Issue 単独では `data-source.ts`（#29が未着手）が levelCap を供給しないため typecheck が通らない可能性があることを明記し、実装スコープを型定義の追加のみに限定する（実際の値の配線は #29 が担当）
+  - [ ] `types.ts` 以外のファイルを変更しない
+
+### Wave 2（依存: Wave1）
+
+#### Issue #27: titles.ts の称号帯インデックスを10刻みに変える
+- 状態: 未着手
+- 対象ファイル: `src/lib/titles.ts`
+- 提供: `clampLevel`（内部関数。Lv→称号帯インデックス 1..10 を返す）。`titleFor`/`totalTitleFor` のシグネチャは不変
+- 依存契約: Issue#25 の `TITLE_BAND_SIZE`
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `TITLES`/`TOTAL_TITLES` の文字列・順序に1文字も差分が無い（`git diff` で該当2定数の行を確認）
+  - [ ] `clampLevel` が `TITLE_BAND_SIZE` を使い `Math.min(10, Math.max(1, Math.ceil(level / TITLE_BAND_SIZE)))` 相当の帯インデックスを返す
+  - [ ] `titleFor("INT", 1)` と `titleFor("INT", 10)` が同じ文字列、`titleFor("INT", 11)` は次の文字列を返す
+  - [ ] `totalTitleFor(91)`〜`totalTitleFor(100)` が `TOTAL_TITLES` の最終要素（"トランスフォーメーションリーダー"）を返す
+  - [ ] `titleFor`/`totalTitleFor` の引数・返り値の型を変更しない
+
+#### Issue #28: level.ts に levelCap を導入する
+- 状態: 未着手
+- 対象ファイル: `src/lib/level.ts`
+- 提供: `levelFromExp`/`levelsOf`/`computeTotalLevel`/`weakestStatuses` が cap を受け取れる形に変更（既定値 `MAX_LEVEL` か明示必須かは実装判断。理由をコメントに残す）。`expToNextLevel`/`levelProgress` はキャップ中も貯蓄量を表示できるよう温存
+- 依存契約: Issue#25 の `MAX_LEVEL`/`LEVEL_THRESHOLDS`
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `levelFromExp`/`levelsOf`/`computeTotalLevel`/`weakestStatuses` が cap 引数を受け取り、実効Lv（`min(旧算出Lv, cap)`）を返す
+  - [ ] cap を渡し忘れると上限が無言で効かなくなる設計を避ける（必須引数化、または既定値 `MAX_LEVEL` を明示コメント付きで採用する等）。選んだ理由をコメントに残す
+  - [ ] `expToNextLevel`/`levelProgress` は cap 到達中も 0/null に潰さず、累積EXPの貯蓄がそのまま見える（S-2 の画面要件）
+  - [ ] `src/lib/exp.ts` は変更しない
+  - [ ] 既存のエクスポート関数名を変更・削除しない
+
+### Wave 3（依存: Wave1・Wave2）
+
+#### Issue #29: data-source.ts と JSON に levelCap を配線する
+- 状態: 未着手
+- 対象ファイル: `src/lib/data-source.ts`, `src/data/status.json`, `src/data/status.calib.json`
+- 提供: `RawStatus.levelCap: number` / `toGameState` が `GameState.levelCap` を供給する
+- 依存契約: Issue#26 の `GameState.levelCap`
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `RawStatus` 型に `levelCap: number` が追加され、`toGameState` が `raw.levelCap` を `GameState.levelCap` にそのまま渡す
+  - [ ] `src/data/status.json` と `src/data/status.calib.json` に `"levelCap": 50` を追加する
+  - [ ] `loadDashboard("main").state.levelCap === 50` かつ `loadDashboard("calibration").state.levelCap === 50`
+  - [ ] `quests.json`/`history.json`/`hall-of-fame.json` は変更しない
+  - [ ] `data-source.ts` の「JSONに型を付ける唯一の入口」という契約を壊さない（他ファイルで `as` キャストを増やさない）
+
+#### Issue #30: skill.ts の派生判定を実効Lv（levelCap後）で行う
+- 状態: 未着手
+- 対象ファイル: `src/lib/skill.ts`
+- 提供: `derivationStates`/`buildUniqueSkill` が levelCap を受け取れる形に変更
+- 依存契約: Issue#28 の cap 対応 `level.ts` 関数群
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `derivationStates(statuses, levelCap)` が `requirements.current` を実効Lv（cap適用後）で算出する
+  - [ ] `buildUniqueSkill(activations, statuses, levelCap)` が上記を内部で使う
+  - [ ] cap=50 のとき、実exp上はLv70相当でも `《システム設計》`（TECH70要件）の `current` は50で頭打ちになる
+  - [ ] `skillLevelFromActivations`/`skillMultiplier`/`structureBonus` 等、発動回数に基づく既存ロジックは変更しない
+  - [ ] `constants.ts`/`level.ts`/`types.ts` 以外のファイルを変更しない
+
+#### Issue #31: penalty.ts の gameOver 集計を実効Lvで行う
+- 状態: 未着手
+- 対象ファイル: `src/lib/penalty.ts`
+- 提供: `gameOver` の殿堂スナップショット算出ロジックの更新（外部シグネチャ不変）
+- 依存契約: Issue#28 の cap 対応 `level.ts` 関数群 / Issue#26 の `GameState.levelCap`
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `gameOver` 内の `computeTotalLevel(state.statuses)`/`levelsOf(state.statuses)` が `state.levelCap` を渡す形に更新される
+  - [ ] `maxTotalLevel`/`maxLevels` が実効Lv（cap適用後）で記録される
+  - [ ] `applyPenalty`/`clampHp`/`hpZone` 等、cap と無関係な既存ロジックは変更しない
+  - [ ] `gameOver`/`applyPenalty` の外部シグネチャ（引数・返り値の型）を変更しない
+
+#### Issue #32: status-radar.tsx の軸最大値を levelCap に連動させる
+- 状態: 未着手
+- 対象ファイル: `src/components/status/status-radar.tsx`
+- 提供: `StatusRadarProps.levelCap: number`（新規必須prop）
+- 依存契約: なし（levelCap は呼び出し元 #34 から渡る値の受け口を用意するのみ）
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `RADAR_MAX = 10` の定数定義を削除する（`grep -n RADAR_MAX src/components/status/status-radar.tsx` がヒットしない）
+  - [ ] `StatusRadarProps` に `levelCap: number` を追加し、`PolarRadiusAxis` の `domain` を `[0, levelCap]` にする
+  - [ ] コメント「軸最大値は常に10固定。データに応じて自動調整しない（C-11）」を「軸最大値はキャップ（levelCap）に連動する。キャップは制度上の値でありデータではないため、データに応じた自動調整には当たらない」という趣旨に書き換える
+  - [ ] このファイルにレベル閾値・キャップ値の数値リテラルを残さない（`levelCap` は必ずpropとして受け取る）
+
+#### Issue #33: status-list.tsx を levelCap 対応にする
+- 状態: 未着手
+- 対象ファイル: `src/components/status/status-list.tsx`
+- 提供: `StatusListProps.levelCap: number`（新規必須prop）
+- 依存契約: Issue#28 の cap 対応 `levelFromExp`
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `StatusListProps` に `levelCap: number` を追加する
+  - [ ] `StatusRow` 内の `levelFromExp(status.exp)` 呼び出しに `levelCap` を渡し、表示される Lv バッジ・進捗バー・残EXPが実効Lv（cap適用後）に基づく
+  - [ ] `titleFor(statusKey, level)` に渡す `level` も実効Lv（cap適用後）にする
+  - [ ] 既存の `items`/`weakKeys` props の意味・型は変更しない
+
+### Wave 4（依存: Wave1〜Wave3）
+
+#### Issue #34: status-tab.tsx で levelCap を全経路に配線する
+- 状態: 未着手
+- 対象ファイル: `src/components/status/status-tab.tsx`
+- 提供: `StatusTab` 内部の cap 配線（外部シグネチャ `StatusTab({data: DashboardData})` は不変）
+- 依存契約: Issue#26 の `GameState.levelCap` / Issue#28 の cap 対応 `level.ts` 関数群 / Issue#30 の `buildUniqueSkill` 新シグネチャ / Issue#32 の `StatusRadar` の `levelCap` prop / Issue#33 の `StatusList` の `levelCap` prop
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `state.levelCap` を `levelsOf`/`computeTotalLevel`/`weakestStatuses`/`buildUniqueSkill` の呼び出しすべてに渡す
+  - [ ] `<StatusRadar>` に `levelCap={state.levelCap}` を渡す
+  - [ ] `<StatusList>` に `levelCap={state.levelCap}` を渡す
+  - [ ] `growth-chart.tsx`（`domain={[0, MAX_LEVEL]}` が定数変更のみで0〜100になる）と `unique-skill-panel.tsx`（`FINAL_CLASS_TOTAL_LEVEL` 経由で90になる）はコード変更が不要であることを確認し、変更しない
+  - [ ] `npm run build` で `/` と `/calibration` が両方とも静的生成される
+
+#### Issue #35: level.test.ts / titles.test.ts を100段スケールで全面書き換える
+- 状態: 未着手
+- 対象ファイル: `src/test/level.test.ts`, `src/test/titles.test.ts`
+- 提供: なし（テストのみ）
+- 依存契約: Issue#25（LEVEL_THRESHOLDS/MAX_LEVEL/TITLE_BAND_SIZE）/ Issue#27（titles.ts 帯インデックス）/ Issue#28（level.ts cap対応）
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] k=0..9 で `LEVEL_THRESHOLDS[10k]` が旧閾値 `[0,100,260,516,926,1581,2630,4308,6992,11287]` と一致することを検証する
+  - [ ] 全99区間で `LEVEL_THRESHOLDS[i] < LEVEL_THRESHOLDS[i+1]`（単調増加）を検証する
+  - [ ] `levelFromExp(0)===1` / `levelFromExp(8)===2` / `levelFromExp(7)===1` / `levelFromExp(11287)===91` / `levelFromExp(17318)===100` / `levelFromExp(999999)===100` を検証する
+  - [ ] cap の効き（累積EXPがLv91相当でも `cap=50` なら実効Lv50、`cap` を50→70に上げると貯蓄分で一気に上がる）と、cap到達中も `levelProgress`/`expToNextLevel` が0/nullに潰れないことを検証する
+  - [ ] 称号帯（Lv1とLv10が同一称号／Lv11で次の称号／Lv91〜100が最終称号）を `titles.ts` の `TITLES`/`TOTAL_TITLES` から文字列を引いて検証する（テストに文字列を新規に書き起こさない）
+  - [ ] 派生解放がLv50/70で切り替わること、最終クラスがTOTAL Lv90で判定されることを検証する
+
+#### Issue #36: skill.test.ts を派生閾値変更・cap対応に追随させる
+- 状態: 未着手
+- 対象ファイル: `src/test/skill.test.ts`
+- 提供: なし（テストのみ）
+- 依存契約: Issue#25（DERIVATIONS requires ×10）/ Issue#30（skill.ts の levelCap 対応）
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `DERIVATIONS` requires変更（DATA/TECH/INT/PM/BRIDGE ×10）に合わせて期待値を更新する
+  - [ ] `derivationStates`/`buildUniqueSkill` の levelCap 対応をテストする（cap=50でTECH70要件のcurrentが50で頭打ちになるケースを含む）
+  - [ ] `SKILL_ACTIVATION_THRESHOLDS`/`skillMultiplier` 等、発動回数系の既存テストは変更しない
+  - [ ] `npm run test -- skill.test.ts` が単体で通る
+
+#### Issue #37: data-source.test.ts に levelCap の検証を追加する
+- 状態: 未着手
+- 対象ファイル: `src/test/data-source.test.ts`
+- 提供: なし（テストのみ）
+- 依存契約: Issue#29（data-source.ts / JSON の levelCap 供給）
+- 担当: dev-phase2-worker
+- 受け入れ条件:
+  - [ ] `loadDashboard("main").state.levelCap === 50` を検証するテストを追加する
+  - [ ] `loadDashboard("calibration").state.levelCap === 50` を検証するテストを追加する
+  - [ ] 既存の9キー・quests形状・history検証などのテストは変更しない
+  - [ ] `npm run test -- data-source.test.ts` が単体で通る
+
 ## テスト運用までの P0（7件・2026-08-19 棚卸し）
 
 > 本番（`13_deployment.md` §1）は稼働しているが、**盤面の状態が一切変化しない**。
