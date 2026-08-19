@@ -25,6 +25,7 @@ type RawStatus = {
   debuffs: GameState["debuffs"];
   uniqueSkillActivations: number;
   calibration?: CalibrationProgress;
+  levelCap: number;
 };
 
 function toGameState(raw: RawStatus, phase: Phase): GameState {
@@ -37,6 +38,7 @@ function toGameState(raw: RawStatus, phase: Phase): GameState {
     debuffs: raw.debuffs,
     uniqueSkillActivations: raw.uniqueSkillActivations,
     calibration: raw.calibration,
+    levelCap: raw.levelCap,
   };
 }
 
