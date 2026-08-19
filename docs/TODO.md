@@ -34,37 +34,7 @@
 > `grep` で `src/components/` にレベル閾値・キャップ値の数値リテラルが出現しない（AC-15）。
 > 375/768/1024/1440px で横スクロールが発生しない（Lv表示が2〜3桁になるため等幅フォントの桁揃えを確認）。
 
-### Wave 1
-
-#### Issue #25: constants.ts のレベル定数体系を100段化する
-- 状態: 未着手
-- 対象ファイル: `src/lib/constants.ts`
-- 提供: `LEVEL_THRESHOLDS`（100要素・ユーザー提示の配列にそのまま差し替え）/ `MAX_LEVEL = 100` /
-  `TITLE_BAND_SIZE = 10` / `LEVEL_CAP_GATES = [50, 70, 90, 100] as const` /
-  `INITIAL_LEVEL_CAP = LEVEL_CAP_GATES[0]` / `DERIVATIONS`（requires を×10に更新） /
-  `FINAL_CLASS_TOTAL_LEVEL = 90` / `CALIBRATION_INITIAL_LEVEL_RANGE = {min:10, max:50}` /
-  `CALIBRATION_TOTAL_QUESTS = 14`
-- 依存契約: なし
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `LEVEL_THRESHOLDS.length === 100` かつ内容がユーザー提示の100要素配列と完全一致する（再計算・再丸めをしない。そのまま採用）。`MAX_LEVEL === 100`
-  - [ ] `TITLE_BAND_SIZE`/`LEVEL_CAP_GATES`/`INITIAL_LEVEL_CAP` が追加されている
-  - [ ] `DERIVATIONS` の requires が `DATA→50` / `TECH(ai-development)→50` / `TECH(system-design)→70 + INT→50` / `PM→50` / `BRIDGE→50` に更新され、`FINAL_CLASS_TOTAL_LEVEL === 90`
-  - [ ] `CALIBRATION_INITIAL_LEVEL_RANGE === {min:10, max:50}`（上限50=初期キャップ50。コメントで「片方だけ動かしてはならない」旨を残す）、`CALIBRATION_TOTAL_QUESTS === 14`
-  - [ ] コメントに「旧カンスト11287はLv91にあたり、Lv92〜100は旧設計に存在しなかった領域」「ゲート③(Lv90)がその直前に落ちる」「EXP側のバランス定数（DIFFICULTY_BASE_EXP等）はこの再分割では変更しない」を残す
-  - [ ] `CALIBRATION_TOTAL_QUESTS`/`CALIBRATION_INITIAL_LEVEL_RANGE`以外の既存エクスポート（`DIFFICULTY_BASE_EXP`等）を変更しない
-
-#### Issue #26: types.ts の GameState に levelCap を追加する
-- 状態: 未着手
-- 対象ファイル: `src/lib/types.ts`
-- 提供: `GameState.levelCap: number`
-- 依存契約: なし
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `GameState` 型に `levelCap: number` フィールドが追加されている
-  - [ ] `GameState` の他フィールド（`phase`/`generation`/`hp`/`streak`/`statuses`/`debuffs`/`uniqueSkillActivations`/`calibration`）は変更しない
-  - [ ] この Issue 単独では `data-source.ts`（#29が未着手）が levelCap を供給しないため typecheck が通らない可能性があることを明記し、実装スコープを型定義の追加のみに限定する（実際の値の配線は #29 が担当）
-  - [ ] `types.ts` 以外のファイルを変更しない
+> **Wave 1（Issue #25 / #26）は完了**（`docs/WORK_LOG/2026-08-19.md`）。
 
 ### Wave 2（依存: Wave1）
 
@@ -124,7 +94,7 @@
 
 #### Issue #31: penalty.ts の gameOver 集計を実効Lvで行う
 - 状態: 未着手
-- 対象ファイル: `src/lib/penalty.ts`
+- 対象ファイル: `src/lib/penalty.ts`, `src/test/penalty.test.ts`
 - 提供: `gameOver` の殿堂スナップショット算出ロジックの更新（外部シグネチャ不変）
 - 依存契約: Issue#28 の cap 対応 `level.ts` 関数群 / Issue#26 の `GameState.levelCap`
 - 担当: dev-phase2-worker
@@ -133,6 +103,9 @@
   - [ ] `maxTotalLevel`/`maxLevels` が実効Lv（cap適用後）で記録される
   - [ ] `applyPenalty`/`clampHp`/`hpZone` 等、cap と無関係な既存ロジックは変更しない
   - [ ] `gameOver`/`applyPenalty` の外部シグネチャ（引数・返り値の型）を変更しない
+  - [ ] `src/test/penalty.test.ts` の `GameState` fixture に `levelCap` を与え、cap 適用後の
+    `maxTotalLevel`/`maxLevels` が記録されることを検証する（Wave1 で判明した漏れ。#26 で
+    `GameState.levelCap` が必須になったため、この fixture がないと typecheck が通らない）
 
 #### Issue #32: status-radar.tsx の軸最大値を levelCap に連動させる
 - 状態: 未着手
