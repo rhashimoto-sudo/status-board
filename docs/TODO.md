@@ -42,116 +42,24 @@
 
 > **Wave 3（Issue #29 / #30 / #31 / #32 / #33）は完了**（`docs/WORK_LOG/2026-08-19.md`）。
 
-### Wave 4（依存: Wave1〜Wave3）
+> **Wave 4（Issue #34 / #35 / #36 / #37 / #39）は完了**（`docs/WORK_LOG/2026-08-19.md`）。
+> 実装中に司令塔が追加した Issue #40（称号帯の floor 契約違反＝確定バグの修正）・
+> #41（`exp.test.ts` の陳腐化修正）も完了。
 
-> **Wave 4 は Issue #38 を最初に実施する。** #34/#35/#36 は #38 で確定した新シグネチャ前提で
-> 呼び出し元を直すため、順序を逆にすると旧APIで書いた修正をもう一度書き直すことになる。
+**S-1（レベルスケールの100段化）+ levelCap の導入は実装完了。**
+最終ゲート実測: `npm run verify` 通過（Tests 237 passed / 9ファイル）/ `npm run lint` 出力なし /
+`npm run check:cycles` 循環0件 / `src/components/` にレベル閾値・キャップ値の数値リテラル0件（AC-15）/
+375・768・1024・1440px × 2ルート × 3タブ = 24通りすべて横スクロールなし（3桁Lvに置換した再計測も含む）。
+reviewer（`/code-review` high + `/adversarial-verification` + `/codex-second-review`）で確定指摘0件。
 
-#### Issue #38: levelCap の渡し忘れ・引数取り違えを型で防げないAPI設計を是正する（Wave2 reviewer 検出）
-- 状態: 未着手
-- 対象ファイル: `src/lib/level.ts`（呼び出し元の追随は #33/#34/#35/#36 の責務。このIssueでは直さない）
-- 提供: `weakestStatuses(statuses, options)` / `levelFromExp(exp, levelCap)`（必須化）/ `rawLevelFromExp(exp)`（新規）
-- 依存契約: Issue#28 の cap 対応 `level.ts` 関数群
-- 担当: dev-phase2-worker
-- **根本原因**: cap を「位置引数」で足したため、コンパイラを通り抜ける失敗モードが2種類ある。
-  - (a) **既存の位置引数の前に割り込ませた**: `weakestStatuses(statuses, levelCap, count = 2)` は
-    旧形式 `weakestStatuses(s, 3)` が `3` を `count` ではなく `levelCap` として受け取る。両方 `number`
-    なので**型エラーにならず意味だけ静かに変わる**（全軸Lvが3で頭打ち＋本数が既定2本）。
-    現に `src/test/level.test.ts:225`「count で本数を変えられる」が踏んでいる。
-    `tsc` の TS2554（引数不足）だけを見て移行を完了と判断すると、この形だけが取り残される
-  - (b) **任意引数＋既定値 no-op**: `levelFromExp(exp, levelCap = MAX_LEVEL)` は渡し忘れても
-    型エラーにならず、上限が無言で無効化される（#34 の ghost 系列3箇所がこの経路）
-- 受け入れ条件:
-  - [ ] `weakestStatuses(statuses, { levelCap, count? })` の形に変更する（cap と count を位置引数で
-        並べない）。旧形式 `weakestStatuses(s, 3)` が **`tsc` でエラーになること**を実際に確認して記録する
-  - [ ] `levelFromExp(exp, levelCap)` の `levelCap` を**必須引数**にし、既定値 `MAX_LEVEL` を廃止する
-        （渡し忘れが必ず TS2554 になる状態にする）
-  - [ ] cap を意図的に適用しない経路のために `rawLevelFromExp(exp)`（cap なし・生Lv）を追加し、
-        `expToNextLevel`/`levelProgress` の内部と `src/lib/exp.ts:53` のEXPフロア計算はこちらを使う
-        （生Lvが必要な箇所が**関数名で grep できる**状態にする。既定値による暗黙の no-op を作らない）
-  - [ ] `grep -rn "levelFromExp(" src` の結果に、第2引数なしの呼び出しが1件も残っていない
-        （`rawLevelFromExp` は別名なので対象外）
-  - [ ] `levelsOf`/`computeTotalLevel` は既に cap 必須なので**シグネチャを変更しない**（不要な差分を作らない）
-  - [ ] 実装後 `npx tsc --noEmit` を実行し、**残るエラーが「呼び出し元の cap 未指定・引数形式違い」だけ**で
-        あることを確認して一覧を記録する（#33/#34/#35/#36 の作業対象リストになる）
+**docs 本体の改訂は未実施**（決定10「S-1 実装 → 実測 → docs 本体の改訂」）。
+改訂が要る docs は S-1 節の末尾に列挙済み。
 
-#### Issue #34: status-tab.tsx で levelCap を全経路に配線する
-- 状態: 未着手
-- 対象ファイル: `src/components/status/status-tab.tsx`
-- 提供: `StatusTab` 内部の cap 配線（外部シグネチャ `StatusTab({data: DashboardData})` は不変）
-- 依存契約: **Issue#38 の新シグネチャ（`weakestStatuses` のオプションオブジェクト化・`levelFromExp` の cap 必須化）** / Issue#26 の `GameState.levelCap` / Issue#28 の cap 対応 `level.ts` 関数群 / Issue#30 の `buildUniqueSkill` 新シグネチャ / Issue#32 の `StatusRadar` の `levelCap` prop / Issue#33 の `StatusList` の `levelCap` prop
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `state.levelCap` を `levelsOf`/`computeTotalLevel`/`weakestStatuses`/`buildUniqueSkill` の呼び出しすべてに渡す
-  - [ ] `<StatusRadar>` に `levelCap={state.levelCap}` を渡す
-  - [ ] `<StatusList>` に `levelCap={state.levelCap}` を渡す
-  - [ ] **`levelFromExp(state.statuses[key].expThreeMonthsAgo)` の3箇所（L42 のレーダー ghost 系列 / L87-88 の LEARNING-EXECUTION 乖離）にも `state.levelCap` を渡す**（Wave2 の reviewer が検出した漏れ。**Issue#38 で cap を必須化した後はこの3箇所が `tsc` エラーとして出るので、エラー一覧を潰せば漏れない**（#38 前は任意引数のため渡し忘れても黙って通っていた）。レーダーの軸最大値が `levelCap` 連動（#32）になるため、ghost だけ生Lvのままだと現在値と過去値のスケールが不整合になる）
-  - [ ] `growth-chart.tsx`（`domain={[0, MAX_LEVEL]}` が定数変更のみで0〜100になる）と `unique-skill-panel.tsx`（`FINAL_CLASS_TOTAL_LEVEL` 経由で90になる）はコード変更が不要であることを確認し、変更しない
-  - [ ] `npm run build` で `/` と `/calibration` が両方とも静的生成される
-
-#### Issue #35: level.test.ts / titles.test.ts を100段スケールで全面書き換える
-- 状態: 未着手
-- 対象ファイル: `src/test/level.test.ts`, `src/test/titles.test.ts`
-- 提供: なし（テストのみ）
-- 依存契約: Issue#25（LEVEL_THRESHOLDS/MAX_LEVEL/TITLE_BAND_SIZE）/ Issue#27（titles.ts 帯インデックス）/ Issue#28（level.ts cap対応） / **Issue#38（`weakestStatuses` のオプションオブジェクト化・`levelFromExp` の cap 必須化。`weakestStatuses(s, 3)` 形のテストは期待値ではなく呼び出し形式を直す）**
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] k=0..9 で `LEVEL_THRESHOLDS[10k]` が旧閾値 `[0,100,260,516,926,1581,2630,4308,6992,11287]` と一致することを検証する
-  - [ ] 全99区間で `LEVEL_THRESHOLDS[i] < LEVEL_THRESHOLDS[i+1]`（単調増加）を検証する
-  - [ ] `levelFromExp(0)===1` / `levelFromExp(8)===2` / `levelFromExp(7)===1` / `levelFromExp(11287)===91` / `levelFromExp(17318)===100` / `levelFromExp(999999)===100` を検証する
-  - [ ] cap の効き（累積EXPがLv91相当でも `cap=50` なら実効Lv50、`cap` を50→70に上げると貯蓄分で一気に上がる）と、cap到達中も `levelProgress`/`expToNextLevel` が0/nullに潰れないことを検証する
-  - [ ] 称号帯（Lv1とLv10が同一称号／Lv11で次の称号／Lv91〜100が最終称号）を `titles.ts` の `TITLES`/`TOTAL_TITLES` から文字列を引いて検証する（テストに文字列を新規に書き起こさない）
-  - [ ] 派生解放がLv50/70で切り替わること、最終クラスがTOTAL Lv90で判定されることを検証する
-
-#### Issue #36: skill.test.ts を派生閾値変更・cap対応に追随させる
-- 状態: 未着手
-- 対象ファイル: `src/test/skill.test.ts`
-- 提供: なし（テストのみ）
-- 依存契約: Issue#25（DERIVATIONS requires ×10）/ Issue#30（skill.ts の levelCap 対応）
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `DERIVATIONS` requires変更（DATA/TECH/INT/PM/BRIDGE ×10）に合わせて期待値を更新する
-  - [ ] `derivationStates`/`buildUniqueSkill` の levelCap 対応をテストする（cap=50でTECH70要件のcurrentが50で頭打ちになるケースを含む）
-  - [ ] `SKILL_ACTIVATION_THRESHOLDS`/`skillMultiplier` 等、発動回数系の既存テストは変更しない
-  - [ ] `npm run test -- skill.test.ts` が単体で通る
-
-#### Issue #37: data-source.test.ts に levelCap の検証を追加する
-- 状態: 未着手
-- 対象ファイル: `src/test/data-source.test.ts`
-- 提供: なし（テストのみ）
-- 依存契約: Issue#29（data-source.ts / JSON の levelCap 供給）
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `loadDashboard("main").state.levelCap === 50` を検証するテストを追加する
-  - [ ] `loadDashboard("calibration").state.levelCap === 50` を検証するテストを追加する
-  - [ ] 既存の9キー・quests形状・history検証などのテストは変更しない
-  - [ ] `npm run test -- data-source.test.ts` が単体で通る
-
-#### Issue #39: 折れ線グラフのY軸を固定のまま levelCap の基準線を引く
-- 状態: 未着手
-- 対象ファイル: `src/components/growth/growth-chart.tsx`, `src/components/growth/growth-tab.tsx`, `src/components/status/status-radar.tsx`
-- 提供: `GrowthChartProps.levelCap: number`（新規必須prop）
-- 依存契約: Issue#26 の `GameState.levelCap`
-- 担当: dev-phase2-worker
-- 追加の経緯: 決定9（レーダー軸の cap 連動）に対し、**折れ線（Tab3・90日の時系列）のY軸をどうするか**が
-  Issue に含まれていなかった。司令塔の判断は「**Y軸は `[0, MAX_LEVEL]` 固定のまま**」。理由:
-  時系列の参照枠を cap 連動にすると、cap が動いた日に過去90日ぶんが遡って再スケールされ、
-  同じ過去データが日によって違う形に見える。さらにゲート解放の「突き抜け」が視覚的に消える。
-  レーダーが cap 連動でよいのは「現在の形を現在の天井に対して見る」スナップショットだからで、
-  決定9 は C-11（レーダー）に閉じた決定。ただし cap=50 の間はY軸の上半分が空くため、
-  `levelCap` の位置に基準線を1本引いて「ロックされた伸びしろ」として読ませる。
-- 受け入れ条件:
-  - [ ] `YAxis` の `domain={[0, MAX_LEVEL]}` を**変更しない**（0〜100 固定）
-  - [ ] `GrowthChartProps` に `levelCap: number`（必須prop）を追加し、`growth-tab.tsx` から
-    `data.state.levelCap` を渡す
-  - [ ] recharts の `ReferenceLine` を `y={levelCap}` に引き、ラベルで現在の上限だと分かるようにする。
-    線は既存の `--color-border-hairline` 系か violet の低透明度で、**発光させない**
-    （`CLAUDE.md`「発光はカウントダウンとHP危険域のみ」）
-  - [ ] `levelCap` を数値リテラルで直書きしない（AC-15）。ラベル文字列に "50" 等を焼き付けない
-  - [ ] `status-radar.tsx` の `StatusRadarPoint.current`/`ghost` の JSDoc「現在の Lv（1〜10）」を
-    「（1〜100）」に直す（Wave3 の reviewer が検出した陳腐化コメント。1行のみ。他は触らない）
-  - [ ] 375px で横スクロールが発生しない
-  - [ ] `history`/`Snapshot` 型・既存系列の描画ロジックを変更しない
+**S-2 以降への申し送り**（`docs/WORK_LOG/2026-08-19.md` の Wave4 節に詳細）:
+- [ ] `src/data/history.json` が旧10段スケールの値のままで、Tab3 の折れ線が 0〜100 軸の下端に張り付く
+- [ ] cap 到達時の EXP バーの別扱い（「⛔ Lv50 到達。ボス《…》討伐で解放」＋貯蓄量の表示）が未実装
+- [ ] levelCap を上げる運用経路（ボス討伐）が未実装のため、現状は Lv50 を超えられない（S-2 本体）
+- [ ] Lv1→2 = 8 EXP の序盤の軽さは未決のまま（実測してから判断する）
 
 ## テスト運用までの P0（7件・2026-08-19 棚卸し）
 
