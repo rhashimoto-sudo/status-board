@@ -36,33 +36,9 @@
 
 > **Wave 1（Issue #25 / #26）は完了**（`docs/WORK_LOG/2026-08-19.md`）。
 
-### Wave 2（依存: Wave1）
-
-#### Issue #27: titles.ts の称号帯インデックスを10刻みに変える
-- 状態: 未着手
-- 対象ファイル: `src/lib/titles.ts`
-- 提供: `clampLevel`（内部関数。Lv→称号帯インデックス 1..10 を返す）。`titleFor`/`totalTitleFor` のシグネチャは不変
-- 依存契約: Issue#25 の `TITLE_BAND_SIZE`
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `TITLES`/`TOTAL_TITLES` の文字列・順序に1文字も差分が無い（`git diff` で該当2定数の行を確認）
-  - [ ] `clampLevel` が `TITLE_BAND_SIZE` を使い `Math.min(10, Math.max(1, Math.ceil(level / TITLE_BAND_SIZE)))` 相当の帯インデックスを返す
-  - [ ] `titleFor("INT", 1)` と `titleFor("INT", 10)` が同じ文字列、`titleFor("INT", 11)` は次の文字列を返す
-  - [ ] `totalTitleFor(91)`〜`totalTitleFor(100)` が `TOTAL_TITLES` の最終要素（"トランスフォーメーションリーダー"）を返す
-  - [ ] `titleFor`/`totalTitleFor` の引数・返り値の型を変更しない
-
-#### Issue #28: level.ts に levelCap を導入する
-- 状態: 未着手
-- 対象ファイル: `src/lib/level.ts`
-- 提供: `levelFromExp`/`levelsOf`/`computeTotalLevel`/`weakestStatuses` が cap を受け取れる形に変更（既定値 `MAX_LEVEL` か明示必須かは実装判断。理由をコメントに残す）。`expToNextLevel`/`levelProgress` はキャップ中も貯蓄量を表示できるよう温存
-- 依存契約: Issue#25 の `MAX_LEVEL`/`LEVEL_THRESHOLDS`
-- 担当: dev-phase2-worker
-- 受け入れ条件:
-  - [ ] `levelFromExp`/`levelsOf`/`computeTotalLevel`/`weakestStatuses` が cap 引数を受け取り、実効Lv（`min(旧算出Lv, cap)`）を返す
-  - [ ] cap を渡し忘れると上限が無言で効かなくなる設計を避ける（必須引数化、または既定値 `MAX_LEVEL` を明示コメント付きで採用する等）。選んだ理由をコメントに残す
-  - [ ] `expToNextLevel`/`levelProgress` は cap 到達中も 0/null に潰さず、累積EXPの貯蓄がそのまま見える（S-2 の画面要件）
-  - [ ] `src/lib/exp.ts` は変更しない
-  - [ ] 既存のエクスポート関数名を変更・削除しない
+> **Wave 2（Issue #27 / #28）は完了**（`docs/WORK_LOG/2026-08-19.md`）。
+> cap API は `levelFromExp(exp, cap = MAX_LEVEL)` が任意引数、集計3関数（`levelsOf`/
+> `computeTotalLevel`/`weakestStatuses`）が必須第2引数。`expToNextLevel`/`levelProgress` は cap を持たない。
 
 ### Wave 3（依存: Wave1・Wave2）
 
@@ -143,6 +119,7 @@
   - [ ] `state.levelCap` を `levelsOf`/`computeTotalLevel`/`weakestStatuses`/`buildUniqueSkill` の呼び出しすべてに渡す
   - [ ] `<StatusRadar>` に `levelCap={state.levelCap}` を渡す
   - [ ] `<StatusList>` に `levelCap={state.levelCap}` を渡す
+  - [ ] **`levelFromExp(state.statuses[key].expThreeMonthsAgo)` の3箇所（L42 のレーダー ghost 系列 / L87-88 の LEARNING-EXECUTION 乖離）にも `state.levelCap` を渡す**（Wave2 の reviewer が検出した漏れ。`levelFromExp` の cap は任意引数のため**渡し忘れても型エラーにならず `tsc`/`build` が黙って通る**。レーダーの軸最大値が `levelCap` 連動（#32）になるため、ghost だけ生Lvのままだと現在値と過去値のスケールが不整合になる）
   - [ ] `growth-chart.tsx`（`domain={[0, MAX_LEVEL]}` が定数変更のみで0〜100になる）と `unique-skill-panel.tsx`（`FINAL_CLASS_TOTAL_LEVEL` 経由で90になる）はコード変更が不要であることを確認し、変更しない
   - [ ] `npm run build` で `/` と `/calibration` が両方とも静的生成される
 
