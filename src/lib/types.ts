@@ -139,6 +139,11 @@ export type GameState = {
   phase: Phase; generation: number; hp: number; streak: number;
   statuses: StatusMap; debuffs: readonly Debuff[];
   uniqueSkillActivations: number;
+  /**
+   * 全軸共通の単一レベル上限。実効Lv = min(levelFromExp(exp), levelCap)。
+   * 初期値50、ボスゲート討伐で 50→70→90→100 と引き上がる（`LEVEL_CAP_GATES`）。
+   */
+  levelCap: number;
   calibration?: CalibrationProgress;
 };
 export type DashboardData = {
