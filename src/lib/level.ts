@@ -1,5 +1,5 @@
-import { LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER, TOTAL_TOP_N, TOTAL_WEIGHT_TOP, TOTAL_WEIGHT_ALL, WEAK_AXIS_COUNT } from "./constants";
-import type { StatusKey, StatusMap } from "./types";
+import { GATE_BOSSES, INITIAL_LEVEL_CAP, LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER, TOTAL_TOP_N, TOTAL_WEIGHT_TOP, TOTAL_WEIGHT_ALL, WEAK_AXIS_COUNT } from "./constants";
+import type { GateBoss, StatusKey, StatusMap } from "./types";
 
 function clampLevel(level: number): number {
   return Math.min(MAX_LEVEL, Math.max(1, level));
@@ -96,6 +96,41 @@ export function computeTotalLevel(statuses: StatusMap, levelCap: number): number
   const allAvg = entries.reduce((sum, e) => sum + e.level, 0) / entries.length;
   const total = topAvg * TOTAL_WEIGHT_TOP + allAvg * TOTAL_WEIGHT_ALL;
   return Math.round(total * 10) / 10;
+}
+
+/**
+ * 討伐済みゲートボスの unlockLevel 集合から levelCap を導出する（S-2 / 決定2の単一キャップ）。
+ *
+ * levelCap を状態として持たず毎回導出する理由: 状態として持つと「討伐した事実」と「cap の値」が
+ * 二重管理になり、片方だけ書き換えたときに静かに食い違う。原典は討伐済みの集合ひとつだけにする。
+ *
+ * GATE_BOSSES に存在しない値は無視する（データが壊れても cap が勝手に上がらないようにする）。
+ * 空配列・未討伐なら INITIAL_LEVEL_CAP。
+ */
+export function computeLevelCap(defeatedGateLevels: readonly number[]): number {
+  const unlockable = new Set<number>(GATE_BOSSES.map((boss) => boss.unlockLevel));
+  const reached = defeatedGateLevels.filter((level) => unlockable.has(level));
+  return clampLevelCap(Math.max(INITIAL_LEVEL_CAP, ...reached));
+}
+
+/**
+ * 現在の levelCap を次に引き上げるゲートボス。すべて討伐済み（cap が最終値）なら null。
+ * 「⛔ Lv50 到達。ボス《…》討伐で解放」の《…》はここから引く（画面に名前を直書きしない）。
+ */
+export function nextGateBoss(levelCap: number): GateBoss | null {
+  return GATE_BOSSES.find((boss) => boss.unlockLevel > levelCap) ?? null;
+}
+
+/**
+ * levelCap に頭打ちされている間に、cap より上へ貯まっている累積EXP（貯蓄量）。
+ *
+ * 基準は **cap を適用しない生Lv** ではなく cap そのものの下限累積EXP。
+ * 「cap の下限からいくら積み上がったか」を返すので、cap が解放された瞬間に
+ * その分がそのままLvへ変換される量と一致する。頭打ちしていなければ 0。
+ */
+export function cappedSavingsExp(exp: number, levelCap: number): number {
+  if (levelFromExp(exp) < clampLevelCap(levelCap)) return 0;
+  return Math.max(0, exp - levelFloorExp(levelCap));
 }
 
 /** TOTAL Lv の小数部（ヒーローのEXPバーに使う）。0..1。 */

@@ -45,6 +45,20 @@ export const LEVEL_CAP_GATES = [50, 70, 90, 100] as const;
 /** 初期状態の levelCap（ゲート①）。 */
 export const INITIAL_LEVEL_CAP = LEVEL_CAP_GATES[0];
 
+/**
+ * ゲートボス3体（決定6: ボス ＝ `00_profile.md` §3 の今年の合格条件3つ。新規に発明しない）。
+ *
+ * `unlockLevel` は「討伐すると levelCap がこの値まで上がる」到達先であり、ゲートの位置ではない。
+ * 初期キャップ Lv50（= LEVEL_CAP_GATES[0]）から 70 → 90 → 100 と引き上がるため、
+ * 3体の unlockLevel は LEVEL_CAP_GATES の 2番目以降と1対1に対応する。
+ * 決定2により全軸共通の単一キャップなので、ボス1体で9軸すべてが同時に解放される。
+ */
+export const GATE_BOSSES = [
+  { id: "cases-three",   name: "《実例三件》",     unlockLevel: LEVEL_CAP_GATES[1] },
+  { id: "playbook",      name: "《手順の言語化》", unlockLevel: LEVEL_CAP_GATES[2] },
+  { id: "team-forward",  name: "《チーム推進》",   unlockLevel: LEVEL_CAP_GATES[3] },
+] as const;
+
 // ── TOTAL Lv（04_exp_rules.md §5）
 export const TOTAL_TOP_N = 5;
 /** ヒーローと一覧で「最も薄い軸」として強調する本数（CLAUDE.md の弱点可視化）。 */

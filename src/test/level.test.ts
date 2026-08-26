@@ -8,8 +8,11 @@ import {
   levelsOf,
   totalLevelProgress,
   weakestStatuses,
+  computeLevelCap,
+  nextGateBoss,
+  cappedSavingsExp,
 } from "@/lib/level";
-import { DERIVATIONS, FINAL_CLASS_TOTAL_LEVEL, LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER } from "@/lib/constants";
+import { DERIVATIONS, FINAL_CLASS_TOTAL_LEVEL, GATE_BOSSES, INITIAL_LEVEL_CAP, LEVEL_CAP_GATES, LEVEL_THRESHOLDS, MAX_LEVEL, STATUS_ORDER } from "@/lib/constants";
 import type { Status, StatusKey, StatusMap } from "@/lib/types";
 
 function makeStatusMap(expByKey: Partial<Record<StatusKey, number>>): StatusMap {
@@ -317,5 +320,80 @@ describe("派生解放・最終クラスの閾値定数（100段化に追随）"
 
   it("最終クラスは TOTAL Lv90 で判定される", () => {
     expect(FINAL_CLASS_TOTAL_LEVEL).toBe(90);
+  });
+});
+
+/**
+ * S-2: levelCap を引き上げる唯一の経路（ゲートボス討伐）。
+ *
+ * 決定5「ゲートは Lv50/70/90（初期キャップ Lv50）」の 50 は**初期キャップ**であって
+ * ボスの解放先ではない。この読みでないと Lv100 に到達する経路が存在しなくなる。
+ */
+describe("computeLevelCap / nextGateBoss", () => {
+  it("未討伐なら INITIAL_LEVEL_CAP のまま", () => {
+    expect(computeLevelCap([])).toBe(INITIAL_LEVEL_CAP);
+    expect(INITIAL_LEVEL_CAP).toBe(50);
+  });
+
+  it("ゲートボス3体の解放先は 70 / 90 / 100 で、LEVEL_CAP_GATES の2番目以降と一致する", () => {
+    expect(GATE_BOSSES.map((boss) => boss.unlockLevel)).toEqual([70, 90, 100]);
+    expect(GATE_BOSSES.map((boss) => boss.unlockLevel)).toEqual([...LEVEL_CAP_GATES].slice(1));
+    expect(GATE_BOSSES).toHaveLength(3);   // 決定6: 今年の合格条件3つと1対1
+  });
+
+  it("討伐した分だけ 50 → 70 → 90 → 100 と上がる", () => {
+    expect(computeLevelCap([70])).toBe(70);
+    expect(computeLevelCap([70, 90])).toBe(90);
+    expect(computeLevelCap([70, 90, 100])).toBe(100);
+  });
+
+  it("討伐順が前後しても、到達済みの最大値が cap になる", () => {
+    expect(computeLevelCap([90, 70])).toBe(90);
+    expect(computeLevelCap([100])).toBe(100);
+  });
+
+  it("GATE_BOSSES に無い値は無視する（データが壊れても cap が勝手に上がらない）", () => {
+    expect(computeLevelCap([65])).toBe(INITIAL_LEVEL_CAP);
+    expect(computeLevelCap([999])).toBe(INITIAL_LEVEL_CAP);
+    expect(computeLevelCap([70, 999])).toBe(70);
+  });
+
+  it("cap は MAX_LEVEL を超えない", () => {
+    expect(computeLevelCap([70, 90, 100])).toBeLessThanOrEqual(MAX_LEVEL);
+  });
+
+  it("nextGateBoss は現 cap を次に引き上げるボスを返し、最終到達後は null", () => {
+    expect(nextGateBoss(50)?.unlockLevel).toBe(70);
+    expect(nextGateBoss(70)?.unlockLevel).toBe(90);
+    expect(nextGateBoss(90)?.unlockLevel).toBe(100);
+    expect(nextGateBoss(100)).toBeNull();
+  });
+
+  it("nextGateBoss の名前は GATE_BOSSES 由来（画面に直書きしない）", () => {
+    expect(nextGateBoss(50)?.name).toBe(GATE_BOSSES[0].name);
+  });
+});
+
+describe("cappedSavingsExp（キャップ中の貯蓄量）", () => {
+  it("頭打ちしていなければ 0", () => {
+    expect(cappedSavingsExp(LEVEL_THRESHOLDS[40], 50)).toBe(0);   // Lv41 < cap50
+  });
+
+  it("cap 到達後は cap の下限累積EXPからの超過分を返す", () => {
+    const floor50 = LEVEL_THRESHOLDS[49];                          // Lv50 の下限
+    expect(cappedSavingsExp(floor50, 50)).toBe(0);
+    expect(cappedSavingsExp(floor50 + 300, 50)).toBe(300);
+  });
+
+  it("cap が上がると同じ累積EXPでも貯蓄は解消される（Lvへ変換される）", () => {
+    const exp = LEVEL_THRESHOLDS[49] + 300;
+    expect(cappedSavingsExp(exp, 50)).toBeGreaterThan(0);
+    expect(cappedSavingsExp(exp, 70)).toBe(0);
+  });
+
+  it("cap 済みLvではなく生Lvで到達を判定する（cap済みLvだと到達を検出できない）", () => {
+    const exp = LEVEL_THRESHOLDS[69];            // 生Lv70・cap50 なら実効Lv50
+    expect(levelFromExp(exp, 50)).toBe(50);
+    expect(cappedSavingsExp(exp, 50)).toBe(exp - LEVEL_THRESHOLDS[49]);
   });
 });
