@@ -31,6 +31,7 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     debuffs: [],
     uniqueSkillActivations: 0,
     levelCap: INITIAL_LEVEL_CAP,
+    defeatedGateLevels: [],
     ...overrides,
   };
 }

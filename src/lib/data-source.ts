@@ -6,6 +6,7 @@ import questsData from "@/data/quests.json";
 import historyData from "@/data/history.json";
 import hallOfFameData from "@/data/hall-of-fame.json";
 
+import { computeLevelCap } from "./level";
 import type {
   CalibrationProgress,
   DashboardData,
@@ -25,7 +26,8 @@ type RawStatus = {
   debuffs: GameState["debuffs"];
   uniqueSkillActivations: number;
   calibration?: CalibrationProgress;
-  levelCap: number;
+  /** 討伐済みゲートボスの unlockLevel 集合。levelCap は持たせない（導出値なので二重管理しない）。 */
+  defeatedGateLevels: readonly number[];
 };
 
 function toGameState(raw: RawStatus, phase: Phase): GameState {
@@ -38,7 +40,9 @@ function toGameState(raw: RawStatus, phase: Phase): GameState {
     debuffs: raw.debuffs,
     uniqueSkillActivations: raw.uniqueSkillActivations,
     calibration: raw.calibration,
-    levelCap: raw.levelCap,
+    defeatedGateLevels: raw.defeatedGateLevels,
+    // levelCap は JSON に持たせず討伐済み集合から毎回導出する（S-2 / Issue #44）。
+    levelCap: computeLevelCap(raw.defeatedGateLevels),
   };
 }
 

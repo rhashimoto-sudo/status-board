@@ -17,5 +17,5 @@
   "debuffs": [],
   "uniqueSkillActivations": 0,
   "calibration": { "day": 6, "totalDays": 14, "done": 8, "totalQuests": 18 },
-  "levelCap": 50
+  "defeatedGateLevels": []
 }
