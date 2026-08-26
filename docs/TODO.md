@@ -165,6 +165,149 @@ reviewer（`/code-review` high + `/adversarial-verification` + `/codex-second-re
 - [ ] levelCap を上げる運用経路（ボス討伐）が未実装のため、現状は Lv50 を超えられない（S-2 本体）
 - [ ] Lv1→2 = 8 EXP の序盤の軽さは未決のまま（実測してから判断する）
 
+## Wave 分解（S-2 申し送り3件 / 2026-08-27）
+
+> planner（改善モード）が既存コード（`level.ts`/`exp.ts`/`constants.ts`/`types.ts`/`data-source.ts`/
+> `status.json`/`status.calib.json`/`history.json`/`growth-chart.tsx`/`status-list.tsx`）を読んで分解。
+> scope: 「引き継ぎ（2026-08-20 一時停止時点）」の再開時の優先順1（S-2 の申し送り3件）のみ。
+> docs 本体の改訂・S-3・S-4・P0各件・pnpm移行・PR作成は**スコープ外**（着手しない）。
+> ボス討伐の入力元は `src/data/*.json` の静的フラグとし、Notion連携・日次ジョブ（P0-1）には依存させない
+> （司令塔追記の確定仕様）。levelCap は決定2により**全軸共通の単一キャップ**、ゲートボス①②③は
+> 決定6により `docs/00_profile.md` §3「今年の合格条件」3つの転記（新規発明しない）。
+> Issue数: 4 / Wave数: 2（レビュー区切り2回）/ 最長依存鎖: 2（#43 → #44、#43 → #45）
+> 担当エージェント: 全Issue共通で `tdd-worker`
+
+> **全Issue共通の受け入れ条件**:
+> - `src/test/exp.test.ts` の「applyExpDelta と levelCap（S-2 の不変条件）」を変更・削除しない。
+>   `exp.ts` の `applyExpDelta`／`floorExp` に `levelCap` 引数を追加しない
+>   （EXPフロアの基準は必ず cap 非適用の生Lv。キャップ中に貯めた EXP が減点で消えてはならない）
+> - `develop/level-100-scale-issue-38`（`levelFromExp` の cap 必須化案）は不採用。参照・マージしない
+> - 調整値・キャップ値・レベル閾値はすべて `src/lib/constants.ts` に一元管理し、
+>   `src/components/` に数値リテラルを直書きしない（AC-15）
+> - docs 本体（`00_profile.md`/`01_requirements.md`/`03_status_system.md`/`04_exp_rules.md`/
+>   `07_unique_skill.md`/`09_dashboard_spec.md` 等）は書き換えない・`/spec-sync` を実行しない
+> - Step 1 スコープ厳守。`src/data/*.json` の静的ダミーのみ。外部API・シークレットを持ち込まない
+> - ライトモード実装なし・アクセントはシアン/バイオレットのみ・375pxで横スクロールなし
+> - 発光（`box-shadow`）はカウントダウンとHP危険域のみ。キャップ表示に新規の発光を追加しない
+> - Lv・EXP・HP・貯蓄量は等幅フォント（`ui-monospace`。`StatValue` コンポーネント）で桁を揃える
+> - PR作成はしない（`/pr-formatter` は今回走らせない）
+
+### Wave 1
+
+#### Issue #42: history.json を実効Lvの水準に合わせて自然な推移で再構成する
+**目的**: `src/data/history.json` が旧10段の値のままで、Tab3 の折れ線（0〜100軸）の下端に張り付いている状態を解消する。
+単純な一律スケール倍では現在値と食い違い、90日分の推移としても不自然になるため、**現在の実効Lvに接続する
+自然な右肩上がりの推移**として作り直す
+**受け入れ条件**:
+- [ ] 最新日（末尾エントリ）の `levels.*` 9軸が、`src/data/status.json`（`levelCap=50`）から
+      `levelFromExp(exp, levelCap)` で算出した実効Lvと一致する：
+      INT 42 / TECH 36 / DATA 41 / MARKETING 22 / PM 21 / BRIDGE 14 / ENGLISH 11 / LEARNING 36 / EXECUTION 25
+- [ ] 最新日の `totalLevel` が、上記 `levels.*` を `computeTotalLevel`（`src/lib/level.ts`。
+      上位5平均×0.6 + 全9平均×0.4）に実際に通して算出した値と一致する（32.6。手計算で埋めない）
+- [ ] 各軸は 90 日を通じて**単調非減少**（Lv は減らない。EXP減点で下がらない仕様と整合させる）
+- [ ] **一律 ×N の単純スケールにしない。** 軸ごとに伸び方を変え、10刻みの階段にならないこと。
+      燃料マップ（`docs/00_profile.md`）で強い軸（INT/DATA/TECH/LEARNING）は伸び幅を大きく、
+      弱い軸（ENGLISH/BRIDGE）は小さく、という形の差を付ける
+- [ ] `totalLevel` は各日の `levels` から `computeTotalLevel` で**再計算した値**を入れる
+      （`levels` と独立に手で置かない。整合を崩さない）
+- [ ] `gainedExp`（ヒートマップの濃度用の生EXP量）は**変更しない**（レベルスケールと無関係の値のため）
+- [ ] `date` の並び・件数（90件）は変更しない
+- [ ] 全エントリの全値が `1 <= 値 <= MAX_LEVEL(100)` の範囲に収まる
+- [ ] **実測での確認**: `npm run dev` で `/` の Tab3 を 375/768/1024/1440px で目視し、
+      折れ線が 0〜100 軸の下端に張り付かないこと、かつ**右端（最新日）の値が Tab1 の表示
+      （TOTAL Lv 32.6・軸別Lv）と食い違わないこと**をレンダリングして確認する
+**対象ファイル**: `src/data/history.json`
+**提供**: なし（データ変更のみ）
+**依存契約**: なし
+**担当**: tdd-worker
+**Wave**: 1
+**状態**: 未着手
+
+#### Issue #43: GateBoss モデルと levelCap 導出関数
+**目的**: 「ボスを倒すと levelCap が上がる」を表現する型・定数・純粋関数を用意する
+（決定2: 全軸共通の単一キャップ／決定5: ゲートは Lv50/70/90／決定6: ゲートボス=今年の合格条件3つ）
+**受け入れ条件**:
+- [ ] `src/lib/types.ts` に `GateBoss = { id: string; name: string; unlockLevel: number }` を追加する
+- [ ] `src/lib/constants.ts` に `GATE_BOSSES` を追加する。要素は3件、`unlockLevel` は
+      `LEVEL_CAP_GATES` の70/90/100と一致し、`name` は `docs/00_profile.md` §3「今年の合格条件」の
+      1〜3を転記する（新規のボス名を発明しない。既存 `docs/TODO.md` の S-2 節と同一の文言:
+      「AIと仕組みで他人の課題を解いた実例3件」/「解き方が再現可能な手順として言語化されている」/
+      「PMとしてチームを1つ、実際に前に進めた」）
+- [ ] `src/lib/level.ts` に `computeLevelCap(defeatedGateLevels: readonly number[]): number` を追加する。
+      空配列なら `INITIAL_LEVEL_CAP`（50）を返し、`defeatedGateLevels` に含まれる `LEVEL_CAP_GATES` の
+      値のうち最大のものを返す（`LEVEL_CAP_GATES` に存在しない値は無視する）
+- [ ] `src/lib/level.ts` に `nextGateBoss(levelCap: number): GateBoss | null` を追加する。
+      `GATE_BOSSES` から `unlockLevel > levelCap` を満たす最初の1件を返し、無ければ `null`
+      （`levelCap === MAX_LEVEL` のとき必ず `null`）
+- [ ] `computeLevelCap([])` は `50`、`computeLevelCap([70])` は `70`、`computeLevelCap([70, 90])` は
+      `90` を返す（`src/test/level.test.ts` に追加する境界値テストで固定する）
+- [ ] `applyExpDelta`／`floorExp`（`exp.ts`）は変更しない。`levelFromExp` の既存シグネチャ
+      （`levelCap` 任意引数・既定値 `MAX_LEVEL`）は変更しない
+**対象ファイル**: `src/lib/types.ts`, `src/lib/constants.ts`, `src/lib/level.ts`
+**提供**: `GateBoss` 型 / `GATE_BOSSES` 定数 / `computeLevelCap(defeatedGateLevels): number` /
+`nextGateBoss(levelCap): GateBoss | null`
+**依存契約**: なし（既存の `LEVEL_CAP_GATES`/`INITIAL_LEVEL_CAP`/`MAX_LEVEL` を利用）
+**担当**: tdd-worker
+**Wave**: 1
+**状態**: 未着手
+
+### Wave 2（依存: Wave1 の Issue #43）
+
+#### Issue #44: JSON の静的フラグから levelCap を導出する配線
+**目的**: `levelCap` を JSON の固定値として直接持たせるのをやめ、「どのゲートボスを討伐済みか」という
+静的フラグから導出する（司令塔確定仕様: 入力元は `src/data/*.json` の静的フラグ。Notion・日次ジョブに依存しない）
+**受け入れ条件**:
+- [ ] `src/lib/data-source.ts` の `RawStatus` から `levelCap: number` フィールドを削除し、
+      `defeatedGateLevels: readonly number[]` を追加する
+- [ ] `toGameState` は `levelCap: computeLevelCap(raw.defeatedGateLevels)`（Issue #43 提供）を使って
+      `GameState.levelCap` を算出する（JSON からの直値コピーをやめる）
+- [ ] `src/data/status.json` と `src/data/status.calib.json` の `"levelCap": 50` フィールドを
+      `"defeatedGateLevels": []` に置き換える（どちらも現状ゲートボス討伐前のダミー状態のため、
+      導出結果は従来どおり `50` のまま変わらない）
+- [ ] `loadDashboard("main").state.levelCap === 50` と `loadDashboard("calibration").state.levelCap === 50`
+      が既存の `src/test/data-source.test.ts` で引き続き通る（壊さない）
+- [ ] `src/test/data-source.test.ts` に `defeatedGateLevels` を含むフィクスチャで
+      `computeLevelCap` 経由の導出が反映されるケースを1件追加する
+**対象ファイル**: `src/lib/data-source.ts`, `src/data/status.json`, `src/data/status.calib.json`
+**提供**: `RawStatus.defeatedGateLevels: readonly number[]`（`levelCap` フィールドを置き換え）
+**依存契約**: Issue #43 の `computeLevelCap`（`src/lib/level.ts`）
+**担当**: tdd-worker
+**Wave**: 2
+**状態**: 未着手
+
+#### Issue #45: ステータス一覧のキャップ到達表示（貯蓄量つき）
+**目的**: キャップに到達した軸の累積EXPバーを「⛔ Lv{levelCap} 到達。ボス《…》討伐で解放」＋
+貯まっている EXP 量の表示に切り替える（S-2 の画面要件）。この貯蓄が減点で消えないことは
+Issue #43 が触らない `exp.ts`/`applyExpDelta` の既存不変条件（`exp.test.ts`）が担保する前提とする
+**受け入れ条件**:
+- [ ] `src/components/status/status-list.tsx` の `StatusRow` で、実効Lv（`levelFromExp(status.exp, levelCap)`）が
+      `levelCap` に等しく、かつ `levelCap < MAX_LEVEL` のとき、通常の進捗バー（`ProgressBar` + 「次まで…EXP」）
+      の代わりに「⛔ Lv{levelCap} 到達。ボス《{nextGateBoss(levelCap).name}》討伐で解放」を表示する
+- [ ] 上記の代替表示に、貯まっている EXP 量 `status.exp - levelFloorExp(levelCap)` を
+      `StatValue`（等幅フォント）で併記する（0のときも「0」と表示し、非表示にしない）
+- [ ] `levelCap === MAX_LEVEL` のとき（最終キャップ解放後）は、実効Lvが `MAX_LEVEL` に達している軸も
+      **キャップ表示にしない**（既存の「MAX」表示のまま。`nextGateBoss(MAX_LEVEL)` が `null` になることを利用する）
+- [ ] 実効Lvが `levelCap` 未満の軸（キャップ未到達）は既存の進捗バー表示のまま変化しない（回帰確認）
+- [ ] キャップ表示に `box-shadow`／グロー等の新規発光を追加しない
+- [ ] `src/components/` に `50`/`70`/`90`/`100` などのレベル閾値・キャップ値の数値リテラルが
+      出現しない（`levelCap`/`MAX_LEVEL` prop・import 経由でのみ扱う。AC-15）
+- [ ] `/` を 375/768/1024/1440px で開き、`src/data/status.json` の `levelCap: 50` かつ複数軸が
+      Lv50超相当の累積EXPを持つ状態（テスト用に一時的に高いEXPへ変更して確認してよいが、確認後は
+      `src/data/status.json` を元の値に戻す）でキャップ表示が横スクロールを発生させないことを確認する
+
+**最終ゲート（Wave1〜2 完了後）**:
+- [ ] `npm run verify` / `npm run lint` / `npm run check:cycles`（循環0件）が通る
+- [ ] `src/components/` にレベル閾値・キャップ値の数値リテラルが出現しない（AC-15）
+- [ ] 375/768/1024/1440px × `/` と `/calibration` × 3タブ = 24通りすべて横スクロールなし
+- [ ] Lv・EXP・HP・貯蓄量が等幅フォントで桁を揃えて表示される
+- [ ] `src/test/exp.test.ts` の「applyExpDelta と levelCap（S-2 の不変条件）」が変更されずに通る
+**対象ファイル**: `src/components/status/status-list.tsx`
+**提供**: なし（`StatusRow` の表示分岐の追加のみ。新規のエクスポートなし）
+**依存契約**: Issue #43 の `GateBoss`/`nextGateBoss`/`GATE_BOSSES`（`src/lib/types.ts`/`src/lib/level.ts`）
+**担当**: tdd-worker
+**Wave**: 2
+**状態**: 未着手
+
 ## テスト運用までの P0（7件・2026-08-19 棚卸し）
 
 > 本番（`13_deployment.md` §1）は稼働しているが、**盤面の状態が一切変化しない**。
