@@ -29,6 +29,9 @@
 |------|---------|------|
 | 仕様書 | `docs/01_requirements.md` | 機能仕様・技術スタック・非機能要件（**正典**） |
 | | `docs/02_architecture.md` | システム構成・ディレクトリ設計 |
+| 本人 | `docs/00_profile.md` | 目的・3年逆算・今年の合格条件・9軸の重み・**燃料マップ**（運用エージェントは最初にこれを読む） |
+| 運用 | `docs/13_deployment.md` | **本番URL**・Vercel の環境変数・動作確認の手順 |
+| | `docs/10_notion_schema.md` | Notion スキーマ・work-dashboard との役割分担・9軸の対応表 |
 | 進捗管理 | `docs/TODO.md` | セッション復帰用の一時ファイル（完了タスクは削除） |
 | | `docs/WORK_LOG/` | 作業記録（日次） |
 | | `docs/ERROR_LOG/` | エラー記録（日次） |

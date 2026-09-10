@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TITLES, TOTAL_TITLES, titleFor, totalTitleFor } from "@/lib/titles";
-import { STATUS_ORDER } from "@/lib/constants";
+import { STATUS_ORDER, TITLE_BAND_SIZE } from "@/lib/constants";
 
 // ── 01_requirements.md FR-1-2 / 03_status_system.md §2 の正典（一字一句コピー）
 const CANONICAL_TITLES: Record<string, readonly string[]> = {
@@ -47,6 +47,11 @@ const CANONICAL_TOTAL_TITLES: readonly string[] = [
   "クロスファンクショナル人材", "テクノロジスト", "ビジネスアーキテクト", "AIビジネスアーキテクト", "トランスフォーメーションリーダー",
 ];
 
+/** 帯番号(1始まり)からその帯の最初のLvを求める（例: 帯1→Lv1, 帯2→Lv11, 帯3→Lv21）。 */
+function firstLevelOfBand(band: number): number {
+  return (band - 1) * TITLE_BAND_SIZE + 1;
+}
+
 describe("titles.ts", () => {
   it("9キー分すべてが存在し、STATUS_ORDER と一致する", () => {
     expect(Object.keys(TITLES).sort()).toEqual([...STATUS_ORDER].sort());
@@ -67,38 +72,55 @@ describe("titles.ts", () => {
     expect(TOTAL_TITLES).toEqual(CANONICAL_TOTAL_TITLES);
   });
 
-  it("titleFor が例示どおりの称号を返す", () => {
-    expect(titleFor("INT", 5)).toBe("論理家");
-    expect(titleFor("TECH", 10)).toBe("AIマスター");
-    expect(titleFor("BRIDGE", 1)).toBe("聞き手");
+  it("titleFor は帯の先頭要素を返す（TITLES から引く。文字列を新規に書き起こさない）", () => {
+    expect(titleFor("INT", firstLevelOfBand(1))).toBe(TITLES.INT[0]);
+    expect(titleFor("TECH", firstLevelOfBand(10))).toBe(TITLES.TECH[9]);
+    expect(titleFor("BRIDGE", firstLevelOfBand(1))).toBe(TITLES.BRIDGE[0]);
   });
 
-  it("totalTitleFor が例示どおりの称号を返す", () => {
-    expect(totalTitleFor(9)).toBe("AIビジネスアーキテクト");
-    expect(totalTitleFor(10)).toBe("トランスフォーメーションリーダー");
+  it("totalTitleFor は帯の先頭要素を返す（TOTAL_TITLES から引く）", () => {
+    expect(totalTitleFor(firstLevelOfBand(9))).toBe(TOTAL_TITLES[8]);
+    expect(totalTitleFor(firstLevelOfBand(10))).toBe(TOTAL_TITLES[9]);
   });
 
-  it("titleFor は Lv0・Lv11 を例外を投げず 1..10 にクランプする", () => {
+  it("称号帯: Lv1とLv10は同一称号（第1帯）", () => {
+    expect(titleFor("INT", 1)).toBe(TITLES.INT[0]);
+    expect(titleFor("INT", 10)).toBe(TITLES.INT[0]);
+    expect(titleFor("INT", 1)).toBe(titleFor("INT", 10));
+  });
+
+  it("称号帯: Lv11で次の称号（第2帯）に切り替わる", () => {
+    expect(titleFor("INT", 11)).toBe(TITLES.INT[1]);
+    expect(titleFor("INT", 10)).not.toBe(titleFor("INT", 11));
+  });
+
+  it("称号帯: Lv91〜100は最終称号（第10帯）", () => {
+    expect(titleFor("INT", 91)).toBe(TITLES.INT[9]);
+    expect(titleFor("INT", 100)).toBe(TITLES.INT[9]);
+    expect(titleFor("INT", 91)).toBe(titleFor("INT", 100));
+  });
+
+  it("titleFor は Lv0・Lv101 を例外を投げず 1..100 にクランプする", () => {
     expect(() => titleFor("INT", 0)).not.toThrow();
-    expect(() => titleFor("INT", 11)).not.toThrow();
+    expect(() => titleFor("INT", 101)).not.toThrow();
     expect(titleFor("INT", 0)).toBe(titleFor("INT", 1));
-    expect(titleFor("INT", 11)).toBe(titleFor("INT", 10));
+    expect(titleFor("INT", 101)).toBe(titleFor("INT", 100));
   });
 
-  it("totalTitleFor は Lv0・Lv11 を例外を投げず 1..10 にクランプする", () => {
+  it("totalTitleFor は Lv0・Lv101 を例外を投げず 1..100 にクランプする", () => {
     expect(() => totalTitleFor(0)).not.toThrow();
-    expect(() => totalTitleFor(11)).not.toThrow();
+    expect(() => totalTitleFor(101)).not.toThrow();
     expect(totalTitleFor(0)).toBe(totalTitleFor(1));
-    expect(totalTitleFor(11)).toBe(totalTitleFor(10));
+    expect(totalTitleFor(101)).toBe(totalTitleFor(100));
   });
 
   it("非整数 Lv を floor して称号を返す（03_status_system.md §3.2 / 09_dashboard_spec.md:59）", () => {
-    // totalTitleFor(3.9) は floor(3.9) = 3 → Lv3 の称号（undefined にならない）
+    // totalTitleFor(3.9) は floor(3.9) = 3 → 第1帯の称号（undefined にならない）
     expect(totalTitleFor(3.9)).toBe(totalTitleFor(3));
     expect(totalTitleFor(3.9)).toBeDefined();
     expect(totalTitleFor(3.9)).not.toBe("undefined");
 
-    // titleFor("INT", 4.7) は floor(4.7) = 4 → Lv4 の称号
+    // titleFor("INT", 4.7) は floor(4.7) = 4 → 第1帯の称号（同一帯内なので floor 有無で結果が変わらない）
     expect(titleFor("INT", 4.7)).toBe(titleFor("INT", 4));
     expect(titleFor("INT", 4.7)).toBeDefined();
   });
@@ -106,29 +128,45 @@ describe("titles.ts", () => {
   it("非整数 Lv の境界値（下限・上限）でも undefined にならない", () => {
     expect(totalTitleFor(1.0)).toBe(totalTitleFor(1));
     expect(totalTitleFor(0.5)).toBe(totalTitleFor(1));
-    expect(totalTitleFor(10.0)).toBe(totalTitleFor(10));
-    expect(totalTitleFor(10.9)).toBe(totalTitleFor(10));
+    expect(totalTitleFor(100.0)).toBe(totalTitleFor(100));
+    expect(totalTitleFor(100.9)).toBe(totalTitleFor(100));
 
     expect(titleFor("INT", 1.0)).toBe(titleFor("INT", 1));
     expect(titleFor("INT", 0.5)).toBe(titleFor("INT", 1));
-    expect(titleFor("INT", 10.0)).toBe(titleFor("INT", 10));
-    expect(titleFor("INT", 10.9)).toBe(titleFor("INT", 10));
+    expect(titleFor("INT", 100.0)).toBe(titleFor("INT", 100));
+    expect(titleFor("INT", 100.9)).toBe(titleFor("INT", 100));
+  });
+
+  it("称号帯: 帯の境界を跨ぐ小数Lvでも floor(level) と同じ帯を返す（Issue #40 回帰）", () => {
+    // TOTAL Lv = 20.4 → floor(20.4) = 20 → 第2帯（floor しないと ceil(20.4/10)=3 で1帯早く上がる）
+    expect(totalTitleFor(20.4)).toBe(totalTitleFor(20));
+    expect(totalTitleFor(20.4)).toBe(TOTAL_TITLES[1]);
+  });
+
+  it("称号帯: 各帯の先頭Lv + 0.4 は前の帯に留まる（k=1..9で一般化・Issue #40 回帰）", () => {
+    for (let k = 1; k <= 9; k++) {
+      const boundary = k * TITLE_BAND_SIZE;
+      expect(totalTitleFor(boundary + 0.4)).toBe(totalTitleFor(boundary));
+    }
   });
 
   it("重複称号がリネームされずそのまま残っている（意図的な重複）", () => {
-    // 「学習者」= INT Lv1 = LEARNING Lv1
+    // 「学習者」= INT第1帯 = LEARNING第1帯
     expect(titleFor("INT", 1)).toBe("学習者");
     expect(titleFor("LEARNING", 1)).toBe("学習者");
     expect(titleFor("INT", 1)).toBe(titleFor("LEARNING", 1));
 
-    // 「探索者」= INT Lv2 = LEARNING Lv2 = 総合 Lv2
-    expect(titleFor("INT", 2)).toBe("探索者");
-    expect(titleFor("LEARNING", 2)).toBe("探索者");
-    expect(totalTitleFor(2)).toBe("探索者");
+    // 「探索者」= INT第2帯 = LEARNING第2帯 = 総合第2帯
+    const band2 = firstLevelOfBand(2);
+    expect(titleFor("INT", band2)).toBe("探索者");
+    expect(titleFor("LEARNING", band2)).toBe("探索者");
+    expect(totalTitleFor(band2)).toBe("探索者");
 
-    // 「推進者」= PM Lv3 = EXECUTION Lv6
-    expect(titleFor("PM", 3)).toBe("推進者");
-    expect(titleFor("EXECUTION", 6)).toBe("推進者");
-    expect(titleFor("PM", 3)).toBe(titleFor("EXECUTION", 6));
+    // 「推進者」= PM第3帯 = EXECUTION第6帯
+    const band3 = firstLevelOfBand(3);
+    const band6 = firstLevelOfBand(6);
+    expect(titleFor("PM", band3)).toBe("推進者");
+    expect(titleFor("EXECUTION", band6)).toBe("推進者");
+    expect(titleFor("PM", band3)).toBe(titleFor("EXECUTION", band6));
   });
 });

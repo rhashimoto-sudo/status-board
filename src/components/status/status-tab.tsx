@@ -28,22 +28,22 @@ export function StatusTab({ data }: StatusTabProps) {
   const { state } = data;
   const calibrating = state.phase === "calibration";
 
-  const levels = levelsOf(state.statuses);
+  const levels = levelsOf(state.statuses, state.levelCap);
   const measuredKeys = STATUS_ORDER.filter((key) => state.statuses[key].measured);
   const allMeasured = measuredKeys.length === STATUS_ORDER.length;
 
   // 全軸の測定が完了するまで TOTAL Lv・総合称号は未測定（null）。docs/03_status_system.md:189。
-  const totalLevel = allMeasured ? computeTotalLevel(state.statuses) : null;
+  const totalLevel = allMeasured ? computeTotalLevel(state.statuses, state.levelCap) : null;
   const totalTitle = totalLevel === null ? null : totalTitleFor(totalLevel);
 
   const radarData: readonly StatusRadarPoint[] = STATUS_ORDER.map((key) => ({
     key,
     current: levels[key],
-    ghost: levelFromExp(state.statuses[key].expThreeMonthsAgo),
+    ghost: levelFromExp(state.statuses[key].expThreeMonthsAgo, state.levelCap),
   }));
 
-  const skill = buildUniqueSkill(state.uniqueSkillActivations, state.statuses);
-  const weak = weakestStatuses(state.statuses);
+  const skill = buildUniqueSkill(state.uniqueSkillActivations, state.statuses, state.levelCap);
+  const weak = weakestStatuses(state.statuses, state.levelCap);
   const weakKeys = weak.map((w) => w.key);
   const weakAxes = weak.map((w) => ({ key: w.key, level: w.level, icon: STATUS_ICONS[w.key] }));
   const balanceMeasured =
@@ -67,11 +67,12 @@ export function StatusTab({ data }: StatusTabProps) {
 
       <StatusRadar
         data={radarData}
+        levelCap={state.levelCap}
         measuredKeys={calibrating ? (measuredKeys as readonly StatusKey[]) : undefined}
         centerSlot={<SkillEmblem skillLevel={calibrating ? null : skill.level} />}
       />
 
-      <StatusList items={state.statuses} weakKeys={weakKeys} />
+      <StatusList items={state.statuses} weakKeys={weakKeys} levelCap={state.levelCap} />
 
       {/*
         歪みメーターは LEARNING / EXECUTION が両方とも測定済みのときだけ出す。
@@ -84,8 +85,8 @@ export function StatusTab({ data }: StatusTabProps) {
           learningLv={levels.LEARNING}
           executionLv={levels.EXECUTION}
           gapThreeMonthsAgo={
-            levelFromExp(state.statuses.LEARNING.expThreeMonthsAgo) -
-            levelFromExp(state.statuses.EXECUTION.expThreeMonthsAgo)
+            levelFromExp(state.statuses.LEARNING.expThreeMonthsAgo, state.levelCap) -
+            levelFromExp(state.statuses.EXECUTION.expThreeMonthsAgo, state.levelCap)
           }
         />
       ) : null}

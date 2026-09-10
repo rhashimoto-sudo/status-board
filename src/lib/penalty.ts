@@ -222,8 +222,8 @@ export function applyPenalty(
 export function gameOver(state: GameState, hallOfFame: HallOfFame): { state: GameState; hallOfFame: HallOfFame } {
   const entry: HallOfFameEntry = {
     generation: state.generation,
-    maxTotalLevel: computeTotalLevel(state.statuses),
-    maxLevels: levelsOf(state.statuses),
+    maxTotalLevel: computeTotalLevel(state.statuses, state.levelCap),
+    maxLevels: levelsOf(state.statuses, state.levelCap),
     titles: [],
     defeatedBosses: [],
     longestStreak: state.streak,

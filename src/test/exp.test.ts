@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { applyExpDelta, calcExp, distributeExp, floorExp } from "@/lib/exp";
+import { levelFloorExp, levelFromExp } from "@/lib/level";
+import { LEVEL_CAP_GATES } from "@/lib/constants";
 import type { Status } from "@/lib/types";
 
 function makeStatus(exp: number): Status {
@@ -8,9 +10,12 @@ function makeStatus(exp: number): Status {
 
 describe("floorExp", () => {
   it.each([
-    [890, 5, 926], // Lv5(下限926)で -50: 940-50=890 -> 926（Lv5のまま）
-    [990, 5, 990], // Lv5(下限926)で -10: 1000-10=990 -> 990（下限を下回らない）
-    [-5, 1, 0], // Lv1(下限0)で -10: 5-10=-5 -> 0（負にならない）
+    // Lv5の下限を下回るときは下限でフロアする
+    [levelFloorExp(5) - 4, 5, levelFloorExp(5)],
+    // Lv5の下限を上回っているときはそのまま
+    [levelFloorExp(5) + 6, 5, levelFloorExp(5) + 6],
+    // Lv1（下限0）では負にならない
+    [-5, 1, levelFloorExp(1)],
   ])("newExp=%i, currentLevel=%i -> %i", (newExp, currentLevel, expected) => {
     expect(floorExp(newExp, currentLevel)).toBe(expected);
   });
@@ -121,12 +126,12 @@ describe("calcExp の completion クランプ", () => {
 });
 
 describe("applyExpDelta", () => {
-  it("Lv5(940)から-50しても現Lvの下限926で止まる", () => {
+  it("Lv41(940)から-50しても現Lvの下限926で止まる", () => {
     const result = applyExpDelta(makeStatus(940), -50);
-    expect(result.exp).toBe(926);
+    expect(result.exp).toBe(levelFloorExp(41));
   });
 
-  it("Lv5(1000)から-10なら990（下限を下回らないのでそのまま）", () => {
+  it("Lv41(1000)から-10なら990（下限を下回らないのでそのまま）", () => {
     const result = applyExpDelta(makeStatus(1000), -10);
     expect(result.exp).toBe(990);
   });
@@ -147,5 +152,40 @@ describe("applyExpDelta", () => {
     expect(result.key).toBe(original.key);
     expect(result.measured).toBe(original.measured);
     expect(result.expThreeMonthsAgo).toBe(original.expThreeMonthsAgo);
+  });
+});
+
+/**
+ * S-2 の不変条件を守るための回帰テスト。
+ *
+ * `applyExpDelta` は EXP フロアの基準に **levelCap を適用しない生Lv** を使わなければならない。
+ * `levelFromExp` の第2引数（levelCap）は既定値 `MAX_LEVEL` の任意引数で、`exp.ts` は
+ * これを渡さないことで生Lvを得ている。ここに実際の cap を渡すよう「厳密化」すると、
+ * **キャップ到達中に貯めた EXP が減点のたびに現在の実効Lvの下限まで削られ**、
+ * 「キャップ中も貯まり続け、解放時に貯蓄分で一気に追いつく」という S-2 の核が壊れる。
+ *
+ * 以下のテストは、その一手を入れた瞬間に落ちる。
+ */
+describe("applyExpDelta と levelCap（S-2 の不変条件）", () => {
+  const CAP = LEVEL_CAP_GATES[0];               // 初期キャップ 50
+
+  it("キャップを大きく超えて貯まった EXP は、減点しても実効Lvの下限まで落ちない", () => {
+    // 旧カンスト相当（Lv91）まで貯めた状態。実効Lvは cap で 50 に抑えられている。
+    const saved = levelFloorExp(91);
+    expect(levelFromExp(saved, CAP)).toBe(CAP);  // 実効Lvは 50 に張り付いている
+
+    const result = applyExpDelta(makeStatus(saved), -1000);
+
+    // 生Lv91の下限で止まる。実効Lv50の下限まで削られてはならない。
+    expect(result.exp).toBe(levelFloorExp(91));
+    expect(result.exp).not.toBe(levelFloorExp(CAP));
+  });
+
+  it("減点を受けた後にキャップが解放されても、貯蓄分がそのまま実効Lvに反映される", () => {
+    const saved = levelFloorExp(91);
+    const afterPenalty = applyExpDelta(makeStatus(saved), -1000).exp;
+
+    // ボス討伐で cap 50 → 70 に上がった瞬間、貯蓄分で一気に追いつく。
+    expect(levelFromExp(afterPenalty, LEVEL_CAP_GATES[1])).toBe(LEVEL_CAP_GATES[1]);
   });
 });

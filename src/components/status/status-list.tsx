@@ -1,7 +1,7 @@
 import { ProgressBar } from "@/components/ui/progress-bar";
 import { StatValue } from "@/components/ui/stat-value";
 import { FOUNDATION_ORDER, STATUS_ORDER } from "@/lib/constants";
-import { expToNextLevel, levelFromExp, levelProgress } from "@/lib/level";
+import { cappedSavingsExp, expToNextLevel, levelFromExp, levelProgress, nextGateBoss } from "@/lib/level";
 import { titleFor } from "@/lib/titles";
 import type { Status, StatusKey, StatusMap } from "@/lib/types";
 
@@ -9,6 +9,8 @@ type StatusListProps = {
   items: StatusMap;
   /** 「最も薄い軸」として強調するキー（lib/level.ts の weakestStatuses が算出）。 */
   weakKeys?: readonly StatusKey[];
+  /** 実効Lv・称号の上限（S-2）。levelFromExp/titleFor にのみ適用し、expToNextLevel/levelProgress には適用しない。 */
+  levelCap: number;
 };
 
 // 絵文字はレーダー・一覧共通の意匠（03_status_system.md §1）。key はテキストで併記するため aria-hidden にする。
@@ -30,7 +32,7 @@ const FOUNDATION_START_KEY = FOUNDATION_ORDER[0];
  * ステータス一覧（03_status_system.md §5）。
  * STATUS_ORDER 順に9件を並べ、土台2つの前に区切り線を入れる。
  */
-export function StatusList({ items, weakKeys = [] }: StatusListProps) {
+export function StatusList({ items, weakKeys = [], levelCap }: StatusListProps) {
   return (
     <ul className="space-y-3.5">
       {STATUS_ORDER.map((key) => (
@@ -48,7 +50,12 @@ export function StatusList({ items, weakKeys = [] }: StatusListProps) {
               />
             </div>
           )}
-          <StatusRow statusKey={key} status={items[key]} weak={weakKeys.includes(key)} />
+          <StatusRow
+            statusKey={key}
+            status={items[key]}
+            weak={weakKeys.includes(key)}
+            levelCap={levelCap}
+          />
         </li>
       ))}
     </ul>
@@ -59,16 +66,22 @@ function StatusRow({
   statusKey,
   status,
   weak,
+  levelCap,
 }: {
   statusKey: StatusKey;
   status: Status;
   weak: boolean;
+  levelCap: number;
 }) {
   const measured = status.measured;
-  const level = measured ? levelFromExp(status.exp) : null;
+  const level = measured ? levelFromExp(status.exp, levelCap) : null;
   const title = level !== null ? titleFor(statusKey, level) : null;
   const remaining = level !== null ? expToNextLevel(status.exp) : null;
   const progress = level !== null ? levelProgress(status.exp) : 0;
+  // キャップ到達の判定は cap を適用しない生Lvで行う（cap済みLvで判定すると到達を検出できない）。
+  const capped = measured && levelFromExp(status.exp) >= levelCap;
+  const savings = capped ? cappedSavingsExp(status.exp, levelCap) : 0;
+  const gateBoss = capped ? nextGateBoss(levelCap) : null;
 
   return (
     // 最も薄い軸には violet の縦罫を立てる（色を増やさずに弱点を拾えるようにする）。
@@ -105,7 +118,19 @@ function StatusRow({
             )}
           </div>
 
-          {measured && (
+          {capped ? (
+            // キャップ到達中は「次まで N EXP」ではなく、解放条件と貯蓄量を出す。
+            // 貯蓄は減点でも消えない（exp.test.ts の不変条件）ので、貯まっている事実を見せる。
+            <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+              <span className="text-[12px] text-[color:var(--color-accent-violet)]">
+                ⛔ Lv<StatValue>{levelCap}</StatValue> 到達。
+                {gateBoss ? `ボス${gateBoss.name}討伐で解放` : "上限に到達済み"}
+              </span>
+              <span className="whitespace-nowrap text-[12px] text-[color:var(--color-text-secondary)]">
+                貯蓄 <StatValue>{savings}</StatValue> EXP
+              </span>
+            </div>
+          ) : measured ? (
             <div className="mt-1 flex items-center gap-2">
               <div className="min-w-0 flex-1">
                 <ProgressBar
@@ -125,7 +150,7 @@ function StatusRow({
                 )}
               </span>
             </div>
-          )}
+          ) : null}
         </div>
       </div>
     </div>

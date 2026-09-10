@@ -15,5 +15,6 @@
     "EXECUTION": { "key": "EXECUTION", "exp": 350, "measured": true, "expThreeMonthsAgo": 150 }
   },
   "debuffs": [],
-  "uniqueSkillActivations": 52
+  "uniqueSkillActivations": 52,
+  "defeatedGateLevels": []
 }

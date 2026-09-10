@@ -1,4 +1,4 @@
-import { STATUS_ORDER, DERIVATIONS, DEBUFF_ORDER } from "./constants";
+import { STATUS_ORDER, DERIVATIONS, DEBUFF_ORDER, GATE_BOSSES } from "./constants";
 
 // ── ステータス（★ LEARNING / EXECUTION を主・副に選べない型にする）
 export type StatusKey = (typeof STATUS_ORDER)[number];
@@ -135,10 +135,30 @@ export type HallOfFame = { generation: number; entries: readonly HallOfFameEntry
 
 // ── 画面に渡る最上位の型
 export type CalibrationProgress = { day: number; totalDays: number; done: number; totalQuests: number };
+// ── ゲートボス（levelCap を引き上げる唯一の経路）
+export type GateBossId = (typeof GATE_BOSSES)[number]["id"];
+export type GateBoss = {
+  id: GateBossId;
+  name: string;
+  /** 討伐すると levelCap がこの値まで上がる（ゲートの位置ではなく到達先）。 */
+  unlockLevel: number;
+};
+
 export type GameState = {
   phase: Phase; generation: number; hp: number; streak: number;
   statuses: StatusMap; debuffs: readonly Debuff[];
   uniqueSkillActivations: number;
+  /**
+   * 全軸共通の単一レベル上限。実効Lv = min(levelFromExp(exp), levelCap)。
+   * 初期値50、ボスゲート討伐で 50→70→90→100 と引き上がる（`LEVEL_CAP_GATES`）。
+   */
+  levelCap: number;
+  /**
+   * 討伐済みゲートボスの `unlockLevel` の集合（状態の原典）。
+   * levelCap はこれと INITIAL_LEVEL_CAP から `computeLevelCap` で導出する派生値であり、
+   * 二重管理しない（決定2: 全軸共通の単一キャップ）。
+   */
+  defeatedGateLevels: readonly number[];
   calibration?: CalibrationProgress;
 };
 export type DashboardData = {

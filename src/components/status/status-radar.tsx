@@ -14,14 +14,13 @@ import { STATUS_ORDER } from "@/lib/constants";
 import type { StatusKey } from "@/lib/types";
 import type { BaseTickContentProps } from "recharts";
 
-const RADAR_MAX = 10;
 const UNMEASURED_LABEL = "???";
 
 export type StatusRadarPoint = {
   key: StatusKey;
-  /** 現在の Lv（1〜10）。 */
+  /** 現在の Lv（1〜100）。 */
   current: number;
-  /** 3ヶ月前の Lv（1〜10）。 */
+  /** 3ヶ月前の Lv（1〜100）。 */
   ghost: number;
 };
 
@@ -34,6 +33,8 @@ type StatusRadarProps = {
   measuredKeys?: readonly StatusKey[];
   /** レーダー中心に絶対配置する要素（《構造化》紋章など）。09_dashboard_spec.md:75。 */
   centerSlot?: ReactNode;
+  /** 軸最大値。現在の levelCap（制度上の上限）をそのまま渡す。 */
+  levelCap: number;
 };
 
 type ChartRow = {
@@ -95,9 +96,10 @@ function AxisTick({ x, y, textAnchor, payload, labelByKey }: AxisTickProps) {
 
 /**
  * 9軸固定の Recharts レーダー（現在値 + 3ヶ月前ゴースト）。
- * 軸最大値は常に 10 固定。データに応じて自動調整しない（C-11）。
+ * 軸最大値はキャップ（levelCap）に連動する。キャップは制度上の値でありデータではないため、
+ * データに応じた自動調整には当たらない（C-11 改訂）。
  */
-export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps) {
+export function StatusRadar({ data, measuredKeys, centerSlot, levelCap }: StatusRadarProps) {
   const rows = buildChartRows(data, measuredKeys);
   const labelByKey = new Map(rows.map((row) => [row.key, row.label]));
 
@@ -142,7 +144,7 @@ export function StatusRadar({ data, measuredKeys, centerSlot }: StatusRadarProps
                 tick={<AxisTick labelByKey={labelByKey} />}
               />
               <PolarRadiusAxis
-                domain={[0, RADAR_MAX]}
+                domain={[0, levelCap]}
                 tick={false}
                 axisLine={false}
                 tickCount={6}

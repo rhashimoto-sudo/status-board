@@ -10,7 +10,7 @@ import {
   missionRecoveryAmount,
   updateStreak,
 } from "@/lib/penalty";
-import { HP_MAX, HP_PENALTY, HP_RECOVERY, STATUS_ORDER } from "@/lib/constants";
+import { HP_MAX, HP_PENALTY, HP_RECOVERY, INITIAL_LEVEL_CAP, STATUS_ORDER } from "@/lib/constants";
 import type { DailyQuest, Debuff, Difficulty, GameState, HallOfFame, StatusMap } from "@/lib/types";
 
 const DIFFICULTIES: readonly Difficulty[] = ["D1", "D2", "D3", "D4", "D5"];
@@ -30,6 +30,8 @@ function makeState(overrides: Partial<GameState> = {}): GameState {
     statuses: makeStatuses(100),
     debuffs: [],
     uniqueSkillActivations: 0,
+    levelCap: INITIAL_LEVEL_CAP,
+    defeatedGateLevels: [],
     ...overrides,
   };
 }
@@ -218,6 +220,19 @@ describe("gameOver", () => {
     expect(result.hallOfFame.entries).toHaveLength(2);
     expect(result.hallOfFame.entries[0]).toEqual(hallOfFame.entries[0]);
     expect(result.hallOfFame.entries[1].generation).toBe(1);
+  });
+
+  it("累積EXPがLv91相当（11287以上）でも levelCap:50 なら maxLevels は50で頭打ちになる", () => {
+    const state = makeState({ hp: 0, levelCap: 50, statuses: makeStatuses(11287) });
+    const hallOfFame: HallOfFame = { generation: 1, entries: [] };
+
+    const result = gameOver(state, hallOfFame);
+
+    const entry = result.hallOfFame.entries[0]!;
+    for (const key of STATUS_ORDER) {
+      expect(entry.maxLevels[key]).toBe(50);
+    }
+    expect(entry.maxTotalLevel).toBe(50);
   });
 
   it("前世代の expThreeMonthsAgo が残らず0にリセットされる（ゴースト系列の取りこぼし防止）", () => {
