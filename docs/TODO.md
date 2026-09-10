@@ -558,8 +558,15 @@ Issue #43 が触らない `exp.ts`/`applyExpDelta` の既存不変条件（`exp.
   実際は **50 / 70**（`src/lib/constants.ts:82-86` 実測）
 - [ ] `docs/06_penalty.md:212` — P-3 の検証項目が「Lv5（下限926）・累積940 → Lv5」の
   旧10段表記のまま
+- [ ] `docs/02_architecture.md:208-209` — `LEVEL_THRESHOLDS` が旧10要素のまま、かつ
+  `MAX_LEVEL = 10` と書かれているが、実際は `MAX_LEVEL = 100` / 閾値は100段
+  （`src/lib/constants.ts:14,36` 実測）。しかもこの記述は `docs/02_architecture.md:207` で
+  **`04_exp_rules.md §4` を出典として明記したまま**なので、D-1 で `04_exp_rules.md` を
+  100段に改訂した結果、**出典と本文が矛盾した状態**になっている
 
 放置リスク: **別エージェントが `docs/02_architecture.md` を一次情報として誤読する**。
+特に4件目は出典表記（`04_exp_rules.md §4`）が付いたまま矛盾しているため、
+出典表記を信頼してそのまま旧値を採用してしまうリスクが他の3件より高い。
 
 注意: `docs/06_penalty.md:190` と `docs/11_design_system.md:43` の「71〜100」は
 **HP の帯であってレベルではない**ので改訂対象外。
