@@ -57,7 +57,9 @@ export type MainStatusKey = SpecialtyStatusKey;
 
 ## 2. 称号テーブル（90 + 総合10）
 
-各ステータス Lv1〜10 に称号を持つ。**計 9 × 10 = 90 称号**、加えて**総合称号 10 件**。
+各ステータスは Lv1-100 を Lv10刻みの帯（`TITLE_BAND_SIZE = 10`。Lv1-10=第1帯 … Lv91-100=第10帯）に
+区切り、帯ごとに称号を持つ。称号テーブル自体は Issue #25（100段化）でも**10段のまま変更していない**
+（帯の刻みが1Lvから10Lvに広がっただけ）。**計 9 × 10 = 90 称号**、加えて**総合称号 10 件**。
 
 ### 2.1 専門ステータス
 
@@ -122,8 +124,8 @@ AI × DATA × MARKETING × PM × ENGLISH
   英語で世界の知識を取り込み、PMとして現場に実装する。」
 ```
 
-> **注意**: 最終クラスは **総合 Lv9 の称号**であり Lv10 ではない（Lv10 は「トランスフォーメーションリーダー」）。
-> 到達条件は **総合 Lv9 到達 + 派生スキル5種すべての解放**（`07_unique_skill.md` §4.1）。
+> **注意**: 最終クラスは **TOTAL Lv81-90帯の称号**であり Lv91-100帯（「トランスフォーメーションリーダー」）
+> ではない。到達条件は **TOTAL Lv90 到達（`floor(totalLv) >= 90`）+ 派生スキル5種すべての解放**（`07_unique_skill.md` §4.1）。
 
 ### 2.3 データ構造
 
@@ -146,36 +148,46 @@ export function totalTitleFor(totalLevel: number): string;         // floor し�
 
 ## 3. Lv と称号の判定
 
-### 3.1 ステータス Lv
+### 3.1 ステータス Lv・levelCap
 
-累積EXP から算出する（`04_exp_rules.md` §4）。閾値は `LEVEL_THRESHOLDS`、判定は `>=`。
+累積EXP から算出する（`04_exp_rules.md` §4）。閾値は `LEVEL_THRESHOLDS`（100要素）、判定は `>=`。
+**実効Lv** はこの算出Lvに `levelCap`（`03_status_system.md` の対象外。全軸共通の単一キャップ。
+`04_exp_rules.md` §4.3 / `01_requirements.md` FR-2-2 が正典）を適用した値であり、称号・派生・TOTAL Lv の
+判定はすべて実効Lvを使う。称号は算出Lvではなく実効Lvを **Lv10刻みの帯**へ丸めた上で引く。
 
 ```
-level = 「exp >= LEVEL_THRESHOLDS[i]」を満たす最大の i+1  （上限 10）
-title = TITLES[key][level - 1]
+rawLevel   = 「exp >= LEVEL_THRESHOLDS[i]」を満たす最大の i+1  （上限 MAX_LEVEL=100）
+effLevel   = min(rawLevel, levelCap)
+band       = ceil(floor(effLevel) / TITLE_BAND_SIZE)          （TITLE_BAND_SIZE=10。上限10にクランプ）
+title      = TITLES[key][band - 1]
 ```
+
+> **注意**: EXP減点のフロア（`04_exp_rules.md` §6）は **levelCap を適用しない rawLevel** を基準にする。
+> 実効Lvでフロアすると、キャップ到達中に貯めた EXP が減点のたびに削られてしまう
+> （`src/test/exp.test.ts`「applyExpDelta と levelCap（S-2 の不変条件）」で固定されている）。
 
 ### 3.2 総合称号（TOTAL）
 
 ```
-TOTAL Lv = 上位5ステータスのLv平均 × 0.6 + 全9ステータスのLv平均 × 0.4
-総合称号 = TOTAL_TITLES[floor(TOTAL Lv) - 1]
+TOTAL Lv = 上位5ステータスの実効Lv平均 × 0.6 + 全9ステータスの実効Lv平均 × 0.4
+総合称号 = TOTAL_TITLES[ceil(floor(TOTAL Lv) / TITLE_BAND_SIZE) - 1]
 ```
 
-- 「上位5」は Lv 降順で上位5件。**同値の場合は `STATUS_ORDER` で先にあるものを優先**する（順序を決定的にするため）
-- TOTAL Lv は小数第1位まで保持して表示し（例: `Lv 4.2`）、**称号判定には `floor()` した整数**を使う
-- `floor` の結果は `1..10` にクランプする
+- 「上位5」は実効Lv降順で上位5件。**同値の場合は `STATUS_ORDER` で先にあるものを優先**する（順序を決定的にするため）
+- TOTAL Lv は小数第1位まで保持して表示し（例: `Lv 42.3`）、**称号判定には `floor()` した整数**を使う
+- `floor` した結果を `TITLE_BAND_SIZE`（10）刻みの帯に丸め、`1..10` にクランプする
 
-> **注意**: 最終クラス《AIビジネスアーキテクト》は **総合 Lv9 の称号**であり、
+> **注意**: 最終クラス《AIビジネスアーキテクト》は **TOTAL Lv81-90帯の称号**であり、
 > **派生スキル5種すべての解放も到達条件**に含む（`07_unique_skill.md` §4.1）。
-> TOTAL Lv が 9 に達しただけでは最終クラスに到達しない。
+> TOTAL Lv が 90 に達しただけでは最終クラスに到達しない。
 > `totalTitleFor` は Lv のみを見て称号文字列を返すため、
 > **最終クラス到達の判定だけは派生解放状況を併せて確認する**専用関数を用意する。
 
 ```ts
-export function isFinalClassReached(totalLevel: number, statuses: StatusMap): boolean {
-  return Math.floor(totalLevel) >= 9 && allDerivationsUnlocked(statuses);
+export function isFinalClassReached(totalLevel: number, statuses: StatusMap, levelCap: number): boolean {
+  return Math.floor(totalLevel) >= FINAL_CLASS_TOTAL_LEVEL && allDerivationsUnlocked(statuses, levelCap);
 }
+// FINAL_CLASS_TOTAL_LEVEL = 90（Issue #25 で 9 → 90 に100段化）
 ```
 
 ---
@@ -185,10 +197,10 @@ export function isFinalClassReached(totalLevel: number, statuses: StatusMap): bo
 | 状態 | 表示 |
 |---|---|
 | 未測定の軸 | Lv・称号ともに **`???`**。レーダー上の値は 0 として描画するが**形を作らない**（塗りを出さない） |
-| 測定済みの軸 | 実測で確定した初期Lv（1〜5）と称号を表示する |
+| 測定済みの軸 | 実測で確定した初期Lv（10-50）と称号を表示する |
 | TOTAL Lv | 全軸の測定が完了するまで **`???`** |
 
-初期Lv算出: `clamp(1, 5, round(自己申告点 × 0.4 + 実測点 × 0.6))`
+初期Lv算出: `clamp(10, 50, round(自己申告点 × 0.4 + 実測点 × 0.6))`（上限50 = 初期 `levelCap` と同値）
 
 > **ルール**: `???` は**文字列としてハードコードせず**、`null` / `undefined` を「未測定」として表現し、
 > 表示層で `???` に変換する。データに `"???"` という文字列を入れると Lv の型が壊れる。
@@ -209,22 +221,24 @@ export type StatusState = {
 `STATUS_ORDER` の順に9件を縦に並べる。
 
 ```
-🧠 INT        Lv 5  論理家
-              ████████████▁▁▁▁▁▁  1120 / 1581   (461)
-💻 TECH       Lv 5  AI開発者
-              ██████████▁▁▁▁▁▁▁▁  1050 / 1581   (531)
+🧠 INT        Lv 42  論理家
+              ████████████▁▁▁▁▁▁  1000 / 1034   (34)
+💻 TECH       Lv 36  AIコーダー
+              ██████████▁▁▁▁▁▁▁▁   700 / 739   (39)
 ...
-🔥 LEARNING   Lv 4  自走学習者
-⚔️ EXECUTION  Lv 3  実行者
+🔥 LEARNING   Lv 36  自走学習者
+⚔️ EXECUTION  Lv 25  実行者
 ```
 
 | 要素 | 仕様 |
 |---|---|
 | アイコン + key | 絵文字は `aria-hidden`、key はテキスト |
-| Lv | 等幅フォント |
-| 称号 | `titleFor(key, level)` |
+| Lv | 実効Lv（`levelFromExp(exp, levelCap)`）。等幅フォント |
+| 称号 | `titleFor(key, level)`（実効Lvを渡す） |
 | EXPバー | 現Lv内の進捗率。`現在値 / 次Lv閾値` と**次Lvまでの残り**を等幅で併記 |
-| Lv10 | 残EXPを出さず **`MAX`** と表示し、バーを満杯にする |
+| Lv100 | 残EXPを出さず **`MAX`** と表示し、バーを満杯にする |
+| levelCap到達中 | 「次Lvまで」の代わりに **「⛔ Lv{cap} 到達。ボス《…》討伐で解放」** + **貯蓄EXP量**
+  （`cappedSavingsExp`）を表示する。判定は cap を適用しない生Lvで行う（生Lv >= cap） |
 | 土台2つ | 専門7つとの間に**区切り線**を入れ、自動導出であることを示す |
 
 ---
@@ -235,11 +249,11 @@ export type StatusState = {
 |---|---|---|
 | S-1 | 称号テーブル | 9キー × 10件 = **90件**が揃っている。総合称号 **10件** |
 | S-2 | 軸順 | レーダー・一覧・凡例がすべて `STATUS_ORDER` と一致する |
-| S-3 | Lv→称号 | Lv5 の INT が「論理家」、Lv10 の TECH が「AIマスター」、Lv1 の BRIDGE が「聞き手」 |
-| S-4 | クランプ | Lv 0 や Lv 11 を渡しても例外を投げず両端の称号を返す |
-| S-5 | TOTAL 同値 | Lv同値のステータスが6件以上あっても上位5件の選択が決定的（`STATUS_ORDER` 順） |
-| S-6 | 総合称号 | `floor(TOTAL Lv)` で判定される（Lv 4.9 → 「専門職」） |
-| S-7 | 最終クラス | 総合 Lv9 でも派生5種が未解放なら《AIビジネスアーキテクト》に到達しない |
+| S-3 | Lv→称号 | Lv41-50帯の INT が「論理家」、Lv91-100帯の TECH が「AIマスター」、Lv1-10帯の BRIDGE が「聞き手」 |
+| S-4 | クランプ | 帯 0 や 帯 11 相当（Lv 0 や Lv 101）を渡しても例外を投げず両端の称号を返す |
+| S-5 | TOTAL 同値 | 実効Lv同値のステータスが6件以上あっても上位5件の選択が決定的（`STATUS_ORDER` 順） |
+| S-6 | 総合称号 | `floor(TOTAL Lv)` を10刻みの帯に丸めて判定される（Lv 49.9 → 帯5「複合スキルワーカー」） |
+| S-7 | 最終クラス | TOTAL Lv90 でも派生5種が未解放なら《AIビジネスアーキテクト》に到達しない |
 | S-10 | 称号の重複 | 「学習者」「探索者」「推進者」の重複がテーブルに**そのまま残っている**（リネームされていない） |
 | S-8 | 型の禁止 | `LEARNING` / `EXECUTION` が `MainStatusKey` に代入できない（型エラーになる） |
 | S-9 | 測定期間 | `measured: false` の軸が `???` で描画され、レーダーに塗りが出ない |
