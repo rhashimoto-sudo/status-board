@@ -546,6 +546,37 @@ Issue #43 が触らない `exp.ts`/`applyExpDelta` の既存不変条件（`exp.
   - LEARNING/EXECUTION が未測定のとき歪みメーターを非表示にしている（Wave 8 の team-lead 判断）。
     表に行が無いため記載が必要
 
+### docs の旧Lv10段スケール残存（対象候補ファイル外・未対応/ `/spec-sync` 対象）（2026-09-10 時点）
+
+> 由来: Issue D-1（`01e6708`）で発見。仕様書の「対象候補ファイル」（`00_profile.md` /
+> `01_requirements.md` / `03_status_system.md` / `04_exp_rules.md` / `07_unique_skill.md` /
+> `09_dashboard_spec.md`）に含まれていなかったため意図的に未着手とした。
+
+- [ ] `docs/02_architecture.md:235` — `FINAL_CLASS_TOTAL_LEVEL = 9` と書かれているが
+  実際は **90**（`src/lib/constants.ts:88` 実測）
+- [ ] `docs/02_architecture.md:229-233` — `DERIVATIONS` が `level: 5 / 7` のままだが
+  実際は **50 / 70**（`src/lib/constants.ts:82-86` 実測）
+- [ ] `docs/06_penalty.md:212` — P-3 の検証項目が「Lv5（下限926）・累積940 → Lv5」の
+  旧10段表記のまま
+- [ ] `docs/02_architecture.md:208-209` — `LEVEL_THRESHOLDS` が旧10要素のまま、かつ
+  `MAX_LEVEL = 10` と書かれているが、実際は `MAX_LEVEL = 100` / 閾値は100段
+  （`src/lib/constants.ts:14,36` 実測）。しかもこの記述は `docs/02_architecture.md:207` で
+  **`04_exp_rules.md §4` を出典として明記したまま**なので、D-1 で `04_exp_rules.md` を
+  100段に改訂した結果、**出典と本文が矛盾した状態**になっている
+
+放置リスク: **別エージェントが `docs/02_architecture.md` を一次情報として誤読する**。
+特に4件目は出典表記（`04_exp_rules.md §4`）が付いたまま矛盾しているため、
+出典表記を信頼してそのまま旧値を採用してしまうリスクが他の3件より高い。
+
+注意: `docs/06_penalty.md:190` と `docs/11_design_system.md:43` の「71〜100」は
+**HP の帯であってレベルではない**ので改訂対象外。
+
+補足（レビューで併せて発見された別件・Lv100化とは無関係）: `docs/02_architecture.md:244` の
+`HP_COLOR_THRESHOLDS` 相当の記述が `{safe:50, warn:25}` のままだが実際は
+**70 / 40**（`src/lib/constants.ts:175` 実測）。`06_penalty.md` の別改訂に伴う既存の残存。
+
+`02_architecture.md` は **architect 管轄の可能性がある**ため、着手前に担当を確認すること。
+
 ## デプロイ（ユーザー確認が必要）
 - [ ] コミット・push・Vercel デプロイ
 - [ ] GitHubリポジトリ名のハイフン除去（push 直前）
