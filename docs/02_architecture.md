@@ -204,9 +204,18 @@ export const STATUS_ORDER = [
 export const SPECIALTY_ORDER = STATUS_ORDER.slice(0, 7);   // 専門7つ
 export const FOUNDATION_ORDER = STATUS_ORDER.slice(7);     // 土台2つ
 
-// ── レベル曲線（04_exp_rules.md §4）
-export const LEVEL_THRESHOLDS = [0, 100, 260, 516, 926, 1581, 2630, 4308, 6992, 11287] as const;
-export const MAX_LEVEL = 10;
+// ── レベル曲線（04_exp_rules.md §4 / Issue #25 で100段化）
+// 旧10段 [0,100,260,516,926,1581,2630,4308,6992,11287] を、公比 1.6^(1/10) の等比補間で
+// 100段に再分割（10段ごとに旧閾値へ厳密一致）。全100要素は `src/lib/constants.ts` の
+// LEVEL_THRESHOLDS を参照。抜粋（10段ごとの値。Lv1=0, Lv10=88, Lv50=1501, Lv91=11287=旧カンスト,
+// Lv100=17318）:
+export const LEVEL_THRESHOLDS = [
+  0, 8, 16, 25, 34, 44, 54, 65, 76, 88,          // Lv1-10
+  // …Lv11-90は省略（全量は src/lib/constants.ts を参照）…
+  11287,                                          // Lv91（旧カンスト。Lv92-100は新設）
+  11838, 12416, 13021, 13656, 14321, 15018, 15749, 16515, 17318, // Lv92-100
+] as const;
+export const MAX_LEVEL = 100;
 
 // ── TOTAL Lv（04_exp_rules.md §5）
 export const TOTAL_TOP_N = 5;
@@ -226,13 +235,13 @@ export const MAX_SKILL_LEVEL = 10;
 export const STRUCTURE_MIN_INVOLVED = 3;      // 3ステータス以上で発動
 export const NO_STRUCTURE_BONUS = 1.0;        // 2つ以下のときの倍率
 export const DERIVATIONS = [
-  { id: "data-analysis",  name: "《データ分析》",     requires: [{ key: "DATA",   level: 5 }], effect: "DATA" },
-  { id: "ai-development", name: "《AI開発》",         requires: [{ key: "TECH",   level: 5 }], effect: "TECH" },
-  { id: "system-design",  name: "《システム設計》",   requires: [{ key: "TECH", level: 7 }, { key: "INT", level: 5 }], effect: "TECH" },
-  { id: "pm",             name: "《PM》",             requires: [{ key: "PM",     level: 5 }], effect: "PM" },
-  { id: "bridge",         name: "《現場との橋渡し》", requires: [{ key: "BRIDGE", level: 5 }], effect: "BRIDGE" },
+  { id: "data-analysis",  name: "《データ分析》",     requires: [{ key: "DATA",   level: 50 }], effect: "DATA" },
+  { id: "ai-development", name: "《AI開発》",         requires: [{ key: "TECH",   level: 50 }], effect: "TECH" },
+  { id: "system-design",  name: "《システム設計》",   requires: [{ key: "TECH", level: 70 }, { key: "INT", level: 50 }], effect: "TECH" },
+  { id: "pm",             name: "《PM》",             requires: [{ key: "PM",     level: 50 }], effect: "PM" },
+  { id: "bridge",         name: "《現場との橋渡し》", requires: [{ key: "BRIDGE", level: 50 }], effect: "BRIDGE" },
 ] as const;                                    // requires は AND 条件（配列全件を満たす）
-export const FINAL_CLASS_TOTAL_LEVEL = 9;      // 最終クラスは総合 Lv9 + 全派生解放
+export const FINAL_CLASS_TOTAL_LEVEL = 90;     // 最終クラスは総合 Lv90 + 全派生解放
 
 // ── HP（06_penalty.md §2）
 export const HP_MAX = 100;
@@ -241,7 +250,7 @@ export const HP_PENALTY = {
   dailyMiss: -10, guerrillaExpired: -25, missionFailed: -40, bossFailed: -50,
 } as const;
 export const HP_RECOVERY = { dailyAllClear: 5, missionCleared: 20, bossCleared: 50 } as const;
-export const HP_COLOR_THRESHOLDS = { safe: 50, warn: 25 } as const;  // >50 緑 / >25 黄 / <=25 赤
+export const HP_COLOR_THRESHOLDS = { safe: 70, warn: 40 } as const;  // >70 緑 / >40 黄 / <=40 赤
 export const HP_INCAPACITATED_BELOW = 10;      // hp < 10 で戦闘不能
 
 // ── EXP 減点（06_penalty.md §2）
